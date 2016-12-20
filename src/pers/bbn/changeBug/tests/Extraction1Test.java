@@ -1,22 +1,30 @@
 package pers.bbn.changeBug.tests;
 
+import java.sql.SQLException;
+import java.util.List;
+import junit.framework.TestCase;
+
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 import pers.bbn.changeBug.extraction.Extraction1;
-import pers.bbn.changeBug.extraction.SQLConnection;
 
 public class Extraction1Test {
-	SQLConnection sqlL;
-	String sql;
+	static Extraction1 extraction1;
+
 	@BeforeClass
-	public final void setup() {
-		sqlL=new SQLConnection("MyVoldemort");
-		sqlL.connect();
+	public static void setup() throws Exception {
+		extraction1 = new Extraction1("MyVoldemort", 501, 800);
 	}
+
 	@Test
-	public final void testCalEntropy(){
-		
+	public final void testObtainCurAttributes() throws SQLException {
+		System.out.println("Hello");
+		List<String> curAtt = extraction1.getCurAttributes();
+		System.out.println(curAtt);
+		TestCase.assertTrue(curAtt.get(0).equals("id")
+				&& curAtt.get(1).equals("commit_id")
+				&& curAtt.get(curAtt.size() - 1).equals("lt"));
 	}
 
 }

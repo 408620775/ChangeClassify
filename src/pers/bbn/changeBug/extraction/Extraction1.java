@@ -2,7 +2,6 @@ package pers.bbn.changeBug.extraction;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.sql.SQLException;
@@ -15,11 +14,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-
-import weka.classifiers.meta.nestedDichotomies.ND;
-import weka.classifiers.trees.j48.EntropyBasedSplitCrit;
-
-import com.sun.org.apache.xml.internal.utils.NSInfo;
 
 /**
  * 从miningit生成的数据库中提取一些基本信息，例如作者姓名，提交时间，累计的bug计数等信息。 构造函数中提供需要连接的数据库。
@@ -684,8 +678,11 @@ public class Extraction1 extends Extraction {
 	 * 根据论文A Large-Scale Empirical Study Of Just-in-Time Quality
 	 * Assurance,增加分类实例的fix信息,该信息表明某次change是否fix了一个bug.由于fix
 	 * bug的change相对于增加新功能的change更容易引入缺陷(论文中说的),所以该信息也许对分类有帮助.
+	 * @throws SQLException 
 	 */
-	public void fix() {
-		
+	public void fix() throws SQLException {
+		if (curAttributes==null) {
+			obtainCurAttributes();
+		}
 	}
 }
