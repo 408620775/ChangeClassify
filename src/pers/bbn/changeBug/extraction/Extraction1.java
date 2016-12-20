@@ -35,7 +35,8 @@ import com.sun.org.apache.xml.internal.utils.NSInfo;
  *
  */
 public class Extraction1 extends Extraction {
-	List<Integer> commitIdPart;
+	private List<Integer> commitIdPart;
+	private List<String> curAttributes;
 
 	/**
 	 * 提取第一部分change info，s为指定开始的commit_id，e为结束的commit_id
@@ -156,6 +157,35 @@ public class Extraction1 extends Extraction {
 				sql = "insert extraction1 (commit_id,file_id) values("
 						+ list2.get(0) + "," + list2.get(1) + ")";
 				stmt.executeUpdate(sql);
+			}
+		}
+	}
+
+	/**
+	 * 查看当前extraction1表中所有已存在的属性,对外的接口.
+	 * 
+	 * @return
+	 * @throws SQLException
+	 */
+	public List<String> getCurAttributes() throws SQLException {
+		if (curAttributes == null) {
+			obtainCurAttributes();
+		}
+		return curAttributes;
+	}
+
+	/**
+	 * 将extraction1表中现有的属性填入curAttributes.
+	 * 
+	 * @throws SQLException
+	 */
+	private void obtainCurAttributes() throws SQLException {
+		if (curAttributes == null) {
+			curAttributes = new ArrayList<>();
+			sql = "desc extraction1";
+			resultSet = stmt.executeQuery(sql);
+			while (resultSet.next()) {
+				curAttributes.add(resultSet.getString(1));
 			}
 		}
 	}
@@ -308,7 +338,7 @@ public class Extraction1 extends Extraction {
 		String metric;
 		Map<List<Integer>, Integer> countLineCode = new HashMap<>();
 		while ((line = bReader.readLine()) != null) {
-			if ((!line.contains("pre"))&&line.contains(".java")) {
+			if ((!line.contains("pre")) && line.contains(".java")) {
 				String commit_file_id = line.substring(
 						line.lastIndexOf("\\") + 1, line.lastIndexOf("."));
 				int commitId = Integer.parseInt(commit_file_id.split("_")[0]);
@@ -577,6 +607,8 @@ public class Extraction1 extends Extraction {
 			}
 			System.out.println(commitId + ":" + changeOfFile);
 			float entropy = MathOperation.calEntropy(changeOfFile);
+			float maxEntropy=(float) (Math.log(10)/Math.log(2));
+			entropy=entropy/maxEntropy;
 			sql = "UPDATE extraction1 SET ns=" + subsystem.size() + ",nd="
 					+ directories.size() + ",nf=" + files.size() + ",entropy="
 					+ entropy + " where commit_id=" + commitId;
@@ -632,8 +664,8 @@ public class Extraction1 extends Extraction {
 					la = la + resultSet.getInt(4) - resultSet.getInt(3) + 1;
 				}
 			}
-			sql = "SELECT sloc FROM extraction1 where commit_id="
-					+ list.get(1) + " and file_id=" + list.get(2);
+			sql = "SELECT sloc FROM extraction1 where commit_id=" + list.get(1)
+					+ " and file_id=" + list.get(2);
 			resultSet = stmt.executeQuery(sql);
 			while (resultSet.next()) {
 				lt = resultSet.getInt(1);
@@ -646,5 +678,14 @@ public class Extraction1 extends Extraction {
 					+ " where id=" + list.get(0);
 			stmt.executeUpdate(sql); // 这个信息，似乎在extraction2中的detal计算时已经包含了啊。
 		}
+	}
+
+	/**
+	 * 根据论文A Large-Scale Empirical Study Of Just-in-Time Quality
+	 * Assurance,增加分类实例的fix信息,该信息表明某次change是否fix了一个bug.由于fix
+	 * bug的change相对于增加新功能的change更容易引入缺陷(论文中说的),所以该信息也许对分类有帮助.
+	 */
+	public void fix() {
+		
 	}
 }
