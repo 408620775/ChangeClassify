@@ -599,10 +599,18 @@ public class Extraction1 extends Extraction {
 			while (resultSet.next()) {
 				changeOfFile.add(resultSet.getInt(1));
 			}
+			// 如果为没有相对应的更改的文件,说明该commit很有可能没有更改java文件,或者其修改的java文件都是test类型的.
+			if (changeOfFile.size() == 0) {
+				continue;
+			}
 			System.out.println(commitId + ":" + changeOfFile);
 			float entropy = MathOperation.calEntropy(changeOfFile);
-			float maxEntropy=(float) (Math.log(10)/Math.log(2));
-			entropy=entropy/maxEntropy;
+			float maxEntropy = (float) (Math.log(changeOfFile.size()) / Math.log(2));
+			if (Math.abs(maxEntropy-0)<0.0001) {
+				entropy=0;
+			}else {
+				entropy = entropy / maxEntropy;
+			}			
 			sql = "UPDATE extraction1 SET ns=" + subsystem.size() + ",nd="
 					+ directories.size() + ",nf=" + files.size() + ",entropy="
 					+ entropy + " where commit_id=" + commitId;
@@ -678,11 +686,21 @@ public class Extraction1 extends Extraction {
 	 * 根据论文A Large-Scale Empirical Study Of Just-in-Time Quality
 	 * Assurance,增加分类实例的fix信息,该信息表明某次change是否fix了一个bug.由于fix
 	 * bug的change相对于增加新功能的change更容易引入缺陷(论文中说的),所以该信息也许对分类有帮助.
-	 * @throws SQLException 
+	 * 
+	 * @throws SQLException
 	 */
 	public void fix() throws SQLException {
-		if (curAttributes==null) {
+		if (curAttributes == null) {
 			obtainCurAttributes();
+		}
+		if (!curAttributes.contains("fix")) {
+			sql = "alter table extraction1 add fix tinyint(1) default 0";
+			stmt.executeUpdate(sql);
+		}
+		for (Integer integer : commitIdPart) {
+			sql = "UPDATE extraction1,scmlog SET fix=is_bug_fix where extraction1.commit_id=scmlog.id and extraction1.commit_id="
+					+ integer;
+			stmt.executeUpdate(sql);
 		}
 	}
 }

@@ -14,8 +14,7 @@ public class Main {
 
 	public static void main(String[] args) throws Exception {
 		Extraction1 extraction1=new Extraction1("MyVoldemort",501,800);
-		extraction1.sloc("/home/niu/MyVoldemortMetrics.txt");
-		extraction1.size();
+		extraction1.Diffusion();
 	}
 
 	static public void Automatic1(String project, int start_commit_id,
