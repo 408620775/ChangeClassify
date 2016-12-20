@@ -689,7 +689,7 @@ public class Extraction1 extends Extraction {
 	 * 
 	 * @throws SQLException
 	 */
-	public void fix() throws SQLException {
+	public void purpose() throws SQLException {
 		if (curAttributes == null) {
 			obtainCurAttributes();
 		}
