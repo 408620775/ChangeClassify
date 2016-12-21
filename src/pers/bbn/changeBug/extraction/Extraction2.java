@@ -43,8 +43,7 @@ import java.util.TreeSet;
  * @author niu
  *
  */
-public class Extraction2 extends Extraction {
-	private TreeSet<List<Integer>> icf_id;
+public final class Extraction2 extends Extraction {
 	private int startId;
 	private int endId;
 	private Set<String> curFiles;
