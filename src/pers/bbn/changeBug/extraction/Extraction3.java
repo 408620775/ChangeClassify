@@ -14,6 +14,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.junit.FixMethodOrder;
+
 /**
  * 提取源码信息路径信息。
  * 
@@ -58,6 +60,7 @@ public class Extraction3 extends Extraction {
 	 * @throws SQLException
 	 * @throws IOException
 	 */
+	//FIXME 由于setICFfromDatabase存在问题,本方法也有待改进.
 	public Extraction3(String database, String projectHome, int startId,
 			int endId) throws SQLException, IOException {
 		super(database);
@@ -186,7 +189,7 @@ public class Extraction3 extends Extraction {
 	 * @throws IOException
 	 */
 	public void changeLogInfo() throws SQLException, IOException {
-		//bow = new Bow();
+		// bow = new Bow();
 		// 获得所有不同的commit_id
 		Set<Integer> commit_ids = new LinkedHashSet<>();
 		for (List<Integer> list : id_commitId_fileIds) {
@@ -230,7 +233,7 @@ public class Extraction3 extends Extraction {
 
 				sql = "select patch from patches where commit_id="
 						+ list.get(1) + " and file_id=" + list.get(2);
-				//bow = new Bow();
+				// bow = new Bow();
 				// sql = "select patch from patches where id=2354";
 				resultSet = stmt.executeQuery(sql);
 				String patchString = "";
@@ -349,7 +352,7 @@ public class Extraction3 extends Extraction {
 		for (List<Integer> list : id_commitId_fileIds) {
 			sql = "select current_file_path from actions where commit_id="
 					+ list.get(1) + " and file_id=" + list.get(2);
-			//bow = new Bow();
+			// bow = new Bow();
 			resultSet = stmt.executeQuery(sql);
 
 			if (!resultSet.next()) {
@@ -374,12 +377,14 @@ public class Extraction3 extends Extraction {
 	}
 
 	/**
-	 * 根据数据库中的extraction2设置id_commitId_fileIds.
+	 * 根据数据库中的extraction2设置id_commitId_fileIds.很多情况下由于效率原因,根本就没有生成extraction2表,
+	 * 可以选择从extraction1表中生成,但目前来说extraction1表生成还有点问题,比如不该包含523_687选项.
 	 * 
 	 * @param start
 	 * @param end
 	 * @throws SQLException
 	 */
+	//FIXME
 	public void setICFfromDatabase(int start, int end) throws SQLException {
 		headmap = new ArrayList<>();
 		headmap.add(-1);

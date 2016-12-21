@@ -189,7 +189,6 @@ public class Extraction4 extends Extraction {
 
 			}
 		} catch (BiffException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} catch (IOException e) {
 			System.out.println("Can't find flod " + "//"+projectName + versionNum
