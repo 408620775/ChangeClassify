@@ -730,13 +730,18 @@ public class Extraction1 extends Extraction {
 	 * 根据已存在的extraction1表,获得commit_id,file_id对,
 	 * 否则总是根据commitIdPart就总得去考虑文件类型是不是java文件,是否为test文件,而这一步起始在initial函数中已经做过了.
 	 * 之前有几个函数就是根据commitIdPart然后再判断文件类型来获取数据,那样的方法不可取,复杂度高而且容易出错,有时间的话需要重构.
+	 * 本来是不需要进行类型判断的,但是由于extraction1表中竟然还存在type为D的情况,但是initial()函数明明已经过滤了该类型的实例,
+	 * 所以目前还不知道到底是哪一步导致了extraction1中还有D类型的实例,所以只能再次判读.
 	 * 
 	 * @throws SQLException
 	 */
+	// FIXME
 	private void obtainCFidInExtraction1() throws SQLException {
 		commit_file_inExtracion1 = new ArrayList<>();
 		for (Integer integer : commitIdPart) {
-			sql = "select commit_id,file_id from extraction1 where commit_id="+integer;
+			sql = "select extraction1.commit_id,extraction1.file_id from extraction1,actions where extraction1.commit_id="
+					+ integer
+					+ " and extraction1.commit_id=actions.commit_id and extraction1.file_id=actions.file_id and type!='D'";
 			resultSet = stmt.executeQuery(sql);
 			while (resultSet.next()) {
 				List<Integer> temp = new ArrayList<>();
@@ -745,7 +750,7 @@ public class Extraction1 extends Extraction {
 				commit_file_inExtracion1.add(temp);
 			}
 		}
-		
+
 	}
 
 	/**
@@ -761,5 +766,5 @@ public class Extraction1 extends Extraction {
 		}
 		return commit_file_inExtracion1;
 	}
-	
+
 }
