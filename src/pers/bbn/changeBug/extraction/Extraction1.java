@@ -5,6 +5,8 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.sql.SQLException;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashMap;
@@ -65,9 +67,10 @@ public final class Extraction1 extends Extraction {
 		cumulative_bug_count();
 	}
 
-	public SQLConnection getConnection(){
+	public SQLConnection getConnection() {
 		return sqlL;
 	}
+
 	/**
 	 * extraction1表中可以选择一部分一部分执行的信息.
 	 * 
@@ -714,37 +717,83 @@ public final class Extraction1 extends Extraction {
 	 * Assurance,增加分类实例的历史信息,包括NDEV,AGE,NUC三部分,具体含义见论文.
 	 * 
 	 * @throws SQLException
+	 * @throws ParseException
 	 */
-	public void history() throws SQLException {
+	public void history() throws SQLException, ParseException {
 		if (curAttributes == null) {
 			obtainCurAttributes();
 		}
 		if (!curAttributes.contains("nedv")) {
-			sql = "ALTER TABLE extraction1 ADD (NEDV int,AGE int,NUC int)";
+			sql = "ALTER TABLE extraction1 ADD (NEDV int,AGE long,NUC int)";
 			stmt.executeUpdate(sql);
 		}
 		if (commit_file_inExtracion1 == null) {
 			obtainCFidInExtraction1();
 		}
 		for (List<Integer> commit_fileIdList : commit_file_inExtracion1) {
-			sql = "SELECT MAX(extraction1.id) from extraction1,actions where extraction1.id<=(select id from extraction1 where commit_id="
-					+ commit_fileIdList.get(0)
-					+ " and file_id="
-					+ commit_fileIdList.get(1)
-					+ ") and extraction1.file_id="
-					+ commit_fileIdList.get(1)
-					+ " and extraction1.commit_id=actions.commit_id and extraction1.file_id=actions.file_id and type='A'";
+			updateHistory(commit_fileIdList.get(0), commit_fileIdList.get(1));
 		}
 	}
 
 	/**
-	 * 对于(commit_id,file_id)所对应的文件,返回该文件第一次出现,也就是该文件上次被add时的位置.默认为同一文件的file_id相同.
+	 * 针对给定的commitId,fileId对,update其在extraction1表中的history属性.
+	 * 
+	 * @param curCommitId
+	 * @param curFileId
+	 * @throws SQLException
+	 * @throws ParseException
+	 */
+	public void updateHistory(Integer curCommitId, Integer curFileId)
+			throws SQLException, ParseException {
+		int firstAddCommitId = getFirstAppearOfFile(curCommitId, curFileId);
+		sql = "select commit_date from scmlog where id=" + firstAddCommitId
+				+ " or id=" + curCommitId;
+		resultSet = stmt.executeQuery(sql);
+		String startTime = null;
+		String endTime = null;
+		while (resultSet.next()) {
+			if (startTime == null) {
+				startTime = resultSet.getString(1);
+				continue;
+			}
+			if (endTime == null) {
+				endTime = resultSet.getString(1);
+			}
+		}
+		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+		java.util.Date st = sdf.parse(startTime);
+		java.util.Date et = sdf.parse(endTime);
+		long seconds = (et.getTime() - st.getTime()) / 1000;
+		sql = "select author_id from actions,scmlog where file_id=" + curFileId
+				+ " and scmlog.id=actions.commit_id and commit_date between '"
+				+ startTime + "' and '" + endTime + "'";
+		resultSet = stmt.executeQuery(sql);
+		int count = 0;
+		Set<Integer> author_id = new HashSet<>();
+		while (resultSet.next()) {
+			count++;
+			author_id.add(resultSet.getInt(1));
+		}
+		int nedv = author_id.size();
+		long age = seconds / count;
+		int nuc = count;
+		sql = "update extraction1 set NEDV=" + nedv + ",AGE=" + age + ",NUC="
+				+ nuc + " where commit_id=" + curCommitId + " and file_id="
+				+ curFileId;
+		stmt.executeUpdate(sql);
+	}
+
+	/**
+	 * 对于(commit_id,file_id)所对应的文件,返回该文件第一次出现,也就是该文件上次被add时的位置.默认为同一文件的file_id相同
+	 * .
+	 * 
 	 * @param commit_id
 	 * @param file_id
 	 * @return 该文件对应的第一次被加入时的commit_id.
-	 * @throws SQLException 
+	 * @throws SQLException
 	 */
-	public int getFirstAppearOfFile(int commit_id,int file_id) throws SQLException{
+	public int getFirstAppearOfFile(int commit_id, int file_id)
+			throws SQLException {
 		sql = "SELECT MAX(extraction1.id) from extraction1,actions where extraction1.id<=(select id from extraction1 where commit_id="
 				+ commit_id
 				+ " and file_id="
@@ -752,19 +801,20 @@ public final class Extraction1 extends Extraction {
 				+ ") and extraction1.file_id="
 				+ file_id
 				+ " and extraction1.commit_id=actions.commit_id and extraction1.file_id=actions.file_id and type='A'";
-		resultSet=stmt.executeQuery(sql);
-		int id=0;
+		resultSet = stmt.executeQuery(sql);
+		int id = 0;
 		while (resultSet.next()) {
-			id=resultSet.getInt(1);
+			id = resultSet.getInt(1);
 		}
-		int res=0;
-		sql="select commit_id from extraction1 where id="+id;
-		resultSet=stmt.executeQuery(sql);
+		int res = 0;
+		sql = "select commit_id from extraction1 where id=" + id;
+		resultSet = stmt.executeQuery(sql);
 		while (resultSet.next()) {
-			res=resultSet.getInt(1);
+			res = resultSet.getInt(1);
 		}
 		return res;
 	}
+
 	/**
 	 * 根据已存在的extraction1表,获得commit_id,file_id对,
 	 * 否则总是根据commitIdPart就总得去考虑文件类型是不是java文件,是否为test文件,而这一步起始在initial函数中已经做过了.

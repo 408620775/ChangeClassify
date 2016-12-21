@@ -6,6 +6,7 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.Map;
 
 
@@ -13,7 +14,10 @@ public class Main {
 	static FileOperation fileOperation;
 
 	public static void main(String[] args) throws Exception {
-		Extraction1 extraction1=new Extraction1("MyVoldemort",501,800);
+		//Extraction1 extraction1=new Extraction1("MyVoldemort",501,800);
+		SimpleDateFormat sdf =   new SimpleDateFormat( "yyyy-MM-dd HH:mm:ss" );
+		java.util.Date st=sdf.parse("2009-01-06 05:17:22");
+		
 	}
 
 	static public void Automatic1(String project, int start_commit_id,

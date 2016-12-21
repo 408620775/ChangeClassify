@@ -4,6 +4,7 @@ import java.sql.Date;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
+import java.text.ParseException;
 import java.util.List;
 
 import junit.framework.TestCase;
@@ -42,8 +43,8 @@ public class Extraction1Test {
 
 	@Test
 	public final void testGetFirstAppearOfFile() throws SQLException {
-		int testCommit_id = 532;
-		int testFile_id = 201;
+		int testCommit_id = 497;
+		int testFile_id = 686;
 		String sql = "SELECT MAX(extraction1.id) from extraction1,actions where "
 				+ "extraction1.id<(select id from extraction1 where commit_id="
 				+ testCommit_id
@@ -102,6 +103,10 @@ public class Extraction1Test {
 		int getCommitId=extraction1.getFirstAppearOfFile(testCommit_id, testFile_id);
 		System.out.println(getCommitId);
 		TestCase.assertEquals(firstCommitId,getCommitId );
-
 	}
+	
+	@Test
+	public final void testUpdateHistory() throws SQLException, ParseException{
+		extraction1.updateHistory(497, 686);
+	} 
 }
