@@ -31,6 +31,7 @@ import java.util.Set;
 public class Extraction1 extends Extraction {
 	private List<Integer> commitIdPart;
 	private List<String> curAttributes;
+	private List<List<Integer>> commit_file_inExtracion1;
 
 	/**
 	 * 提取第一部分change info，s为指定开始的commit_id，e为结束的commit_id
@@ -605,12 +606,13 @@ public class Extraction1 extends Extraction {
 			}
 			System.out.println(commitId + ":" + changeOfFile);
 			float entropy = MathOperation.calEntropy(changeOfFile);
-			float maxEntropy = (float) (Math.log(changeOfFile.size()) / Math.log(2));
-			if (Math.abs(maxEntropy-0)<0.0001) {
-				entropy=0;
-			}else {
+			float maxEntropy = (float) (Math.log(changeOfFile.size()) / Math
+					.log(2));
+			if (Math.abs(maxEntropy - 0) < 0.0001) {
+				entropy = 0;
+			} else {
 				entropy = entropy / maxEntropy;
-			}			
+			}
 			sql = "UPDATE extraction1 SET ns=" + subsystem.size() + ",nd="
 					+ directories.size() + ",nf=" + files.size() + ",entropy="
 					+ entropy + " where commit_id=" + commitId;
@@ -703,4 +705,61 @@ public class Extraction1 extends Extraction {
 			stmt.executeUpdate(sql);
 		}
 	}
+
+	/**
+	 * 根据论文A Large-Scale Empirical Study Of Just-in-Time Quality
+	 * Assurance,增加分类实例的历史信息,包括NDEV,AGE,NUC三部分,具体含义见论文.
+	 * 
+	 * @throws SQLException
+	 */
+	public void history() throws SQLException {
+		if (curAttributes == null) {
+			obtainCurAttributes();
+		}
+		if (!curAttributes.contains("nedv")) {
+			sql = "ALTER TABLE extraction1 ADD (NEDV int,AGE int,NUC int)";
+			stmt.executeUpdate(sql);
+		}
+		if (commit_file_inExtracion1 == null) {
+			obtainCFidInExtraction1();
+		}
+
+	}
+
+	/**
+	 * 根据已存在的extraction1表,获得commit_id,file_id对,
+	 * 否则总是根据commitIdPart就总得去考虑文件类型是不是java文件,是否为test文件,而这一步起始在initial函数中已经做过了.
+	 * 之前有几个函数就是根据commitIdPart然后再判断文件类型来获取数据,那样的方法不可取,复杂度高而且容易出错,有时间的话需要重构.
+	 * 
+	 * @throws SQLException
+	 */
+	private void obtainCFidInExtraction1() throws SQLException {
+		commit_file_inExtracion1 = new ArrayList<>();
+		for (Integer integer : commitIdPart) {
+			sql = "select commit_id,file_id from extraction1 where commit_id="+integer;
+			resultSet = stmt.executeQuery(sql);
+			while (resultSet.next()) {
+				List<Integer> temp = new ArrayList<>();
+				temp.add(resultSet.getInt(1));
+				temp.add(resultSet.getInt(2));
+				commit_file_inExtracion1.add(temp);
+			}
+		}
+		
+	}
+
+	/**
+	 * 对外的接口,用于查看当前extraction1中指定范围(构造函数中指定)内的commit_id,file_id对.
+	 * 
+	 * @return
+	 * @throws SQLException
+	 */
+	public List<List<Integer>> getCommit_file_inExtracion1()
+			throws SQLException {
+		if (commit_file_inExtracion1 == null) {
+			obtainCFidInExtraction1();
+		}
+		return commit_file_inExtracion1;
+	}
+	
 }
