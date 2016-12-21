@@ -31,7 +31,7 @@ import java.util.Map;
  * @author niu
  *
  */
-public class Merge {
+public final class Merge {
 	Map<List<Integer>, StringBuffer> content2;
 	Map<List<Integer>, StringBuffer> content3;
 	String sql;
@@ -54,6 +54,7 @@ public class Merge {
 	 * 
 	 * @throws SQLException
 	 */
+	//FIXME 如果extraction2不存在,根本无法获得id_commit_fileIds,如果想根据extraction1获得,目前还存在523_687的问题.
 	public void setCommit_fileId() throws SQLException {
 		id_commit_fileIds = new ArrayList<>();
 		sql = "select id,commit_id,file_id from extraction2";
@@ -130,6 +131,11 @@ public class Merge {
 		stmt = sqlConnection.getStmt();
 	}
 
+	/**
+	 * 合并extraction1和extraction2中的数据,extraction2中的数据由contentMap2直接获得,而不是访问数据库,以减少程序运行时间.
+	 * @return
+	 * @throws SQLException
+	 */
 	private Map<List<Integer>, StringBuffer> merge12_2() throws SQLException {
 		System.out.println("merge12_2");
 		Map<List<Integer>, StringBuffer> m12 = new HashMap<List<Integer>, StringBuffer>();
@@ -172,7 +178,7 @@ public class Merge {
 	 * @return 由extraction1和extraction2合并得到的实例集。
 	 * @throws SQLException
 	 */
-	public Map<List<Integer>, StringBuffer> merge12() throws SQLException {
+	private Map<List<Integer>, StringBuffer> merge12() throws SQLException {
 		System.out.println("merge12");
 
 		// 用以记录表头，以备将来打印。
