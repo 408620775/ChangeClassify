@@ -30,7 +30,7 @@ public class Extraction {
     Statement stmt;
 	ResultSet resultSet;
 	List<Integer> commit_ids;
-	private SQLConnection sqlL;
+	SQLConnection sqlL;
 
 	/**
 	 * extraction2提取信息并不需要miningit生成的数据，此构造函数只是为了统一接口。

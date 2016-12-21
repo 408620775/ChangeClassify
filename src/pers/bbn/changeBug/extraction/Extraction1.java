@@ -28,7 +28,7 @@ import java.util.Set;
  * @author niu
  *
  */
-public class Extraction1 extends Extraction {
+public final class Extraction1 extends Extraction {
 	private List<Integer> commitIdPart;
 	private List<String> curAttributes;
 	private List<List<Integer>> commit_file_inExtracion1;
@@ -65,6 +65,9 @@ public class Extraction1 extends Extraction {
 		cumulative_bug_count();
 	}
 
+	public SQLConnection getConnection(){
+		return sqlL;
+	}
 	/**
 	 * extraction1表中可以选择一部分一部分执行的信息.
 	 * 
@@ -723,9 +726,45 @@ public class Extraction1 extends Extraction {
 		if (commit_file_inExtracion1 == null) {
 			obtainCFidInExtraction1();
 		}
-
+		for (List<Integer> commit_fileIdList : commit_file_inExtracion1) {
+			sql = "SELECT MAX(extraction1.id) from extraction1,actions where extraction1.id<=(select id from extraction1 where commit_id="
+					+ commit_fileIdList.get(0)
+					+ " and file_id="
+					+ commit_fileIdList.get(1)
+					+ ") and extraction1.file_id="
+					+ commit_fileIdList.get(1)
+					+ " and extraction1.commit_id=actions.commit_id and extraction1.file_id=actions.file_id and type='A'";
+		}
 	}
 
+	/**
+	 * 对于(commit_id,file_id)所对应的文件,返回该文件第一次出现,也就是该文件上次被add时的位置.默认为同一文件的file_id相同.
+	 * @param commit_id
+	 * @param file_id
+	 * @return 该文件对应的第一次被加入时的commit_id.
+	 * @throws SQLException 
+	 */
+	public int getFirstAppearOfFile(int commit_id,int file_id) throws SQLException{
+		sql = "SELECT MAX(extraction1.id) from extraction1,actions where extraction1.id<=(select id from extraction1 where commit_id="
+				+ commit_id
+				+ " and file_id="
+				+ file_id
+				+ ") and extraction1.file_id="
+				+ file_id
+				+ " and extraction1.commit_id=actions.commit_id and extraction1.file_id=actions.file_id and type='A'";
+		resultSet=stmt.executeQuery(sql);
+		int id=0;
+		while (resultSet.next()) {
+			id=resultSet.getInt(1);
+		}
+		int res=0;
+		sql="select commit_id from extraction1 where id="+id;
+		resultSet=stmt.executeQuery(sql);
+		while (resultSet.next()) {
+			res=resultSet.getInt(1);
+		}
+		return res;
+	}
 	/**
 	 * 根据已存在的extraction1表,获得commit_id,file_id对,
 	 * 否则总是根据commitIdPart就总得去考虑文件类型是不是java文件,是否为test文件,而这一步起始在initial函数中已经做过了.
