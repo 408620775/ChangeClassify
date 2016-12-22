@@ -691,6 +691,39 @@ public final class Extraction1 extends Extraction {
 	}
 
 	/**
+	 * 根据给定的两个commitId,获取这两个commitId所对应的时间.并需保证firstCommit出现在secondCommit之前.
+	 * 
+	 * @param firstCommit
+	 * @param secondCommit
+	 * @return 起始时间和结束时间组成的list
+	 * @throws SQLException
+	 */
+	private List<String> getTimeRangeBetweenTwoCommit(int firstCommit,
+			int secondCommit) throws SQLException {
+		List<String> res = new ArrayList<>();
+		sql = "select commit_date from scmlog where id=" + firstCommit
+				+ " or id=" + secondCommit;
+		resultSet = stmt.executeQuery(sql);
+		String startTime = null;
+		String endTime = null;
+		while (resultSet.next()) {
+			if (startTime == null) {
+				startTime = resultSet.getString(1);
+				continue;
+			}
+			if (endTime == null) {
+				endTime = resultSet.getString(1);
+			}
+		}
+		if (endTime == null) {
+			endTime = startTime;
+		}
+		res.add(startTime);
+		res.add(endTime);
+		return res;
+	}
+
+	/**
 	 * 根据论文A Large-Scale Empirical Study Of Just-in-Time Quality
 	 * Assurance,增加分类实例的fix信息,该信息表明某次change是否fix了一个bug.由于fix
 	 * bug的change相对于增加新功能的change更容易引入缺陷(论文中说的),所以该信息也许对分类有帮助.
@@ -746,30 +779,17 @@ public final class Extraction1 extends Extraction {
 	public void updateHistory(Integer curCommitId, Integer curFileId)
 			throws SQLException, ParseException {
 		int firstAddCommitId = getFirstAppearOfFile(curCommitId, curFileId);
-		sql = "select commit_date from scmlog where id=" + firstAddCommitId
-				+ " or id=" + curCommitId;
-		resultSet = stmt.executeQuery(sql);
-		String startTime = null;
-		String endTime = null;
-		while (resultSet.next()) {
-			if (startTime == null) {
-				startTime = resultSet.getString(1);
-				continue;
-			}
-			if (endTime == null) {
-				endTime = resultSet.getString(1);
-			}
-		}
-		if (endTime == null) {
-			endTime = startTime;
-		}
+		List<String> timeRange = getTimeRangeBetweenTwoCommit(firstAddCommitId,
+				curCommitId);
+		String startTime = timeRange.get(0);
+		String endTime = timeRange.get(1);
 		int lastCommitId = getLastChangeOfFile(curCommitId, curFileId);
 		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-		sql="select commit_date from scmlog where id="+lastCommitId;
-		resultSet=stmt.executeQuery(sql);
-		String lastTime=null;
+		sql = "select commit_date from scmlog where id=" + lastCommitId;
+		resultSet = stmt.executeQuery(sql);
+		String lastTime = null;
 		while (resultSet.next()) {
-			lastTime=resultSet.getString(1);
+			lastTime = resultSet.getString(1);
 		}
 		java.util.Date lt = sdf.parse(lastTime);
 		java.util.Date et = sdf.parse(endTime);
@@ -817,7 +837,8 @@ public final class Extraction1 extends Extraction {
 				+ curCommitId
 				+ " and file_id="
 				+ curFileId
-				+ ") and file_id=" + curFileId;
+				+ ") and file_id="
+				+ curFileId;
 		resultSet = stmt.executeQuery(sql);
 		int lastId = 0;
 		while (resultSet.next()) {
@@ -905,4 +926,37 @@ public final class Extraction1 extends Extraction {
 		return commit_file_inExtracion1;
 	}
 
+	/**
+	 * 根据论文A Large-Scale Empirical Study Of Just-in-Time Quality
+	 * Assurance,增加分类实例的作者经验信息,包括EXP,REXP,SEXP三部分,具体含义见论文.
+	 * 
+	 * @throws SQLException
+	 */
+	public void experience() throws SQLException {
+		if (curAttributes == null) {
+			obtainCurAttributes();
+		}
+		if (!curAttributes.contains("EXP")) {
+			sql = "ALTER TABLE extraction1 ADD (EXP int,REXP float,SEXP int)";
+		}
+		if (commit_file_inExtracion1 == null) {
+			obtainCFidInExtraction1();
+		}
+		for (List<Integer> list : commit_file_inExtracion1) {
+			updateExperience(list.get(0), list.get(1));
+		}
+	}
+
+	/**
+	 * 针对给定的commitId,fileId,update该实例的作者经验信息.
+	 * 
+	 * @param integer
+	 * @param integer2
+	 * @throws SQLException
+	 */
+	public void updateExperience(Integer commitId, Integer fileId)
+			throws SQLException {
+		int firstAppearCommitId = getFirstAppearOfFile(commitId, fileId);
+
+	}
 }
