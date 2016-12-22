@@ -14,6 +14,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Timer;
 import java.util.Map.Entry;
 import java.util.Set;
 
@@ -942,21 +943,47 @@ public final class Extraction1 extends Extraction {
 		if (commit_file_inExtracion1 == null) {
 			obtainCFidInExtraction1();
 		}
+		int exp=0;
+		float rexp=0f;
+		int sexp=0;
 		for (List<Integer> list : commit_file_inExtracion1) {
-			updateExperience(list.get(0), list.get(1));
+			exp=getExp(list.get(0), list.get(1));
 		}
 	}
 
 	/**
-	 * 针对给定的commitId,fileId,update该实例的作者经验信息.
+	 * 针对给定的commitId,fileId,update该实例的作者exp.目前exp标示,自fileId文件创建以来,
+	 * commitId对应的作者总共更改过多少次fileId文件.
 	 * 
 	 * @param integer
 	 * @param integer2
 	 * @throws SQLException
 	 */
-	public void updateExperience(Integer commitId, Integer fileId)
-			throws SQLException {
+	public int getExp(Integer commitId, Integer fileId) throws SQLException {
 		int firstAppearCommitId = getFirstAppearOfFile(commitId, fileId);
-
+		List<String> timeRange = getTimeRangeBetweenTwoCommit(
+				firstAppearCommitId, commitId);
+		String startTime = timeRange.get(0);
+		String endTime = timeRange.get(1);
+		int exp = 0;
+		int curAuthor_id = 0;
+		sql = "select author_id from scmlog where id=" + commitId;
+		resultSet = stmt.executeQuery(sql);
+		while (resultSet.next()) {
+			curAuthor_id = resultSet.getInt(1);
+		}
+		sql = "select count(*) from extraction1,scmlog where extraction1.commit_id=scmlog.id and commit_date between '"
+				+ startTime
+				+ "' and '"
+				+ endTime
+				+ "' and author_id="
+				+ curAuthor_id + " and file_id=" + fileId;
+		resultSet = stmt.executeQuery(sql);
+		while (resultSet.next()) {
+			exp = resultSet.getInt(1);
+		}
+		return exp;
 	}
+	
+	
 }
