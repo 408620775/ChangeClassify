@@ -760,9 +760,10 @@ public final class Extraction1 extends Extraction {
 				endTime = resultSet.getString(1);
 			}
 		}
-		if (endTime==null) {
-			endTime=startTime;
+		if (endTime == null) {
+			endTime = startTime;
 		}
+		int lastTime = getLastChangeOfFile(curCommitId, curFileId);
 		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 		java.util.Date st = sdf.parse(startTime);
 		java.util.Date et = sdf.parse(endTime);
@@ -784,6 +785,45 @@ public final class Extraction1 extends Extraction {
 				+ nuc + " where commit_id=" + curCommitId + " and file_id="
 				+ curFileId;
 		stmt.executeUpdate(sql);
+	}
+
+	/**
+	 * 获取文件的上一次change.
+	 * 
+	 * @param curCommitId
+	 * @param curFileId
+	 * @return 上一次修改的commit_id.
+	 * @throws SQLException
+	 */
+	public int getLastChangeOfFile(int curCommitId, int curFileId)
+			throws SQLException {
+		sql = "SELECT type from actions where commit_id=" + curCommitId
+				+ " and file_id=" + curFileId;
+		resultSet = stmt.executeQuery(sql);
+		String curType = null;
+		while (resultSet.next()) {
+			curType = resultSet.getString(1);
+		}
+		if (curType.equals("A")) {
+			return curCommitId;
+		}
+		sql = "SELECT MAX(extraction1.id) from extraction1 where id<(select id from extraction1 where commit_id="
+				+ curCommitId
+				+ " and file_id="
+				+ curFileId
+				+ ") and file_id=" + curFileId;
+		resultSet = stmt.executeQuery(sql);
+		int lastId = 0;
+		while (resultSet.next()) {
+			lastId = resultSet.getInt(1);
+		}
+		sql = "SELECT commit_id from extraction1 where id=" + lastId;
+		resultSet = stmt.executeQuery(sql);
+		int lastCommitId = 0;
+		while (resultSet.next()) {
+			lastCommitId = resultSet.getInt(1);
+		}
+		return lastCommitId;
 	}
 
 	/**

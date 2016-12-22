@@ -105,8 +105,13 @@ public class Extraction1Test {
 		TestCase.assertEquals(firstCommitId,getCommitId );
 	}
 	
-	@Test
+	//@Test
 	public final void testUpdateHistory() throws SQLException, ParseException{
-		extraction1.updateHistory(497, 686);
-	} 
+		extraction1.updateHistory(860, 1244);
+	}
+	@Test
+	public final void testGetLastChangeOfFile() throws SQLException {
+		int lastCommitId=extraction1.getLastChangeOfFile(860, 1244);
+		TestCase.assertEquals(860,860);
+	}
 }
