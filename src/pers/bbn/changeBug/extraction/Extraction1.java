@@ -763,11 +763,17 @@ public final class Extraction1 extends Extraction {
 		if (endTime == null) {
 			endTime = startTime;
 		}
-		int lastTime = getLastChangeOfFile(curCommitId, curFileId);
+		int lastCommitId = getLastChangeOfFile(curCommitId, curFileId);
 		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-		java.util.Date st = sdf.parse(startTime);
+		sql="select commit_date from scmlog where id="+lastCommitId;
+		resultSet=stmt.executeQuery(sql);
+		String lastTime=null;
+		while (resultSet.next()) {
+			lastTime=resultSet.getString(1);
+		}
+		java.util.Date lt = sdf.parse(lastTime);
 		java.util.Date et = sdf.parse(endTime);
-		long seconds = (et.getTime() - st.getTime()) / 1000;
+		long seconds = (et.getTime() - lt.getTime()) / 1000;
 		sql = "select author_id from actions,scmlog where file_id=" + curFileId
 				+ " and scmlog.id=actions.commit_id and commit_date between '"
 				+ startTime + "' and '" + endTime + "'";
@@ -779,7 +785,7 @@ public final class Extraction1 extends Extraction {
 			author_id.add(resultSet.getInt(1));
 		}
 		int nedv = author_id.size();
-		long age = seconds / count;
+		long age = seconds;
 		int nuc = count;
 		sql = "update extraction1 set NEDV=" + nedv + ",AGE=" + age + ",NUC="
 				+ nuc + " where commit_id=" + curCommitId + " and file_id="
