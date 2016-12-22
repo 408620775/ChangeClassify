@@ -43,8 +43,8 @@ public class Extraction1Test {
 
 	@Test
 	public final void testGetFirstAppearOfFile() throws SQLException {
-		int testCommit_id = 497;
-		int testFile_id = 686;
+		int testCommit_id = 860;
+		int testFile_id = 1244;
 		String sql = "SELECT MAX(extraction1.id) from extraction1,actions where "
 				+ "extraction1.id<(select id from extraction1 where commit_id="
 				+ testCommit_id

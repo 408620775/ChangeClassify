@@ -723,7 +723,7 @@ public final class Extraction1 extends Extraction {
 		if (curAttributes == null) {
 			obtainCurAttributes();
 		}
-		if (!curAttributes.contains("nedv")) {
+		if (!curAttributes.contains("NEDV")) {
 			sql = "ALTER TABLE extraction1 ADD (NEDV int,AGE long,NUC int)";
 			stmt.executeUpdate(sql);
 		}
@@ -759,6 +759,9 @@ public final class Extraction1 extends Extraction {
 			if (endTime == null) {
 				endTime = resultSet.getString(1);
 			}
+		}
+		if (endTime==null) {
+			endTime=startTime;
 		}
 		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 		java.util.Date st = sdf.parse(startTime);
