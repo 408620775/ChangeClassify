@@ -943,11 +943,8 @@ public final class Extraction1 extends Extraction {
 		if (commit_file_inExtracion1 == null) {
 			obtainCFidInExtraction1();
 		}
-		int exp=0;
-		float rexp=0f;
-		int sexp=0;
 		for (List<Integer> list : commit_file_inExtracion1) {
-			exp=getExp(list.get(0), list.get(1));
+			updateExperience(list.get(0), list.get(1));	
 		}
 	}
 
@@ -959,7 +956,7 @@ public final class Extraction1 extends Extraction {
 	 * @param integer2
 	 * @throws SQLException
 	 */
-	public int getExp(Integer commitId, Integer fileId) throws SQLException {
+	public int updateExperience(Integer commitId, Integer fileId) throws SQLException {
 		int firstAppearCommitId = getFirstAppearOfFile(commitId, fileId);
 		List<String> timeRange = getTimeRangeBetweenTwoCommit(
 				firstAppearCommitId, commitId);
