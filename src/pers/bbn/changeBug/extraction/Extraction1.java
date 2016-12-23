@@ -14,7 +14,6 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Timer;
 import java.util.Map.Entry;
 import java.util.Set;
 
@@ -612,7 +611,7 @@ public final class Extraction1 extends Extraction {
 				continue;
 			}
 			System.out.println(commitId + ":" + changeOfFile);
-			float entropy = MathOperation.calEntropy(changeOfFile);
+			float entropy = MyTool.calEntropy(changeOfFile);
 			float maxEntropy = (float) (Math.log(changeOfFile.size()) / Math
 					.log(2));
 			if (Math.abs(maxEntropy - 0) < 0.0001) {
@@ -944,43 +943,123 @@ public final class Extraction1 extends Extraction {
 			obtainCFidInExtraction1();
 		}
 		for (List<Integer> list : commit_file_inExtracion1) {
-			updateExperience(list.get(0), list.get(1));	
+			updateExperience(list.get(0), list.get(1));
 		}
 	}
 
 	/**
-	 * 针对给定的commitId,fileId,update该实例的作者exp.目前exp标示,自fileId文件创建以来,
-	 * commitId对应的作者总共更改过多少次fileId文件.
-	 * 
+	 * 针对给定的commitId,fileId,update该实例的作者experience.目前experience表示,自fileId文件创建以来,
+	 * commitId对应的作者总共更改过多少次fileId文件(不包括当前的change,因为要预测当前是否引入缺陷)
+	 * .rexp标示根据时间距离现今的长短对rexp进行加权,时间单位为年.sexp为该作者对于当前子系统做过多少次更改.
+	 * 真正进行测试的时候发现exp和rexp的值基本一致,这是因为很少选定的范围内commit跨越了年.
 	 * @param integer
 	 * @param integer2
 	 * @throws SQLException
 	 */
-	public int updateExperience(Integer commitId, Integer fileId) throws SQLException {
+	public void updateExperience(int commitId, int fileId)
+			throws SQLException {
 		int firstAppearCommitId = getFirstAppearOfFile(commitId, fileId);
 		List<String> timeRange = getTimeRangeBetweenTwoCommit(
 				firstAppearCommitId, commitId);
 		String startTime = timeRange.get(0);
 		String endTime = timeRange.get(1);
 		int exp = 0;
+		float rexp = 0f;
+		int sexp = 0;
 		int curAuthor_id = 0;
-		sql = "select author_id from scmlog where id=" + commitId;
+		String curFilePath = null;
+		sql = "select author_id,current_file_path from scmlog,actions where scmlog.id=actions.commit_id and scmlog.id="
+				+ commitId + " and file_id=" + fileId;
 		resultSet = stmt.executeQuery(sql);
 		while (resultSet.next()) {
 			curAuthor_id = resultSet.getInt(1);
+			curFilePath = resultSet.getString(2);
 		}
-		sql = "select count(*) from extraction1,scmlog where extraction1.commit_id=scmlog.id and commit_date between '"
+		sql = "select commit_date from extraction1,scmlog where extraction1.commit_id=scmlog.id and commit_date between '"
 				+ startTime
 				+ "' and '"
 				+ endTime
 				+ "' and author_id="
 				+ curAuthor_id + " and file_id=" + fileId;
 		resultSet = stmt.executeQuery(sql);
+		List<String> datesList = new ArrayList<>();
 		while (resultSet.next()) {
-			exp = resultSet.getInt(1);
+			datesList.add(resultSet.getString(1));
 		}
-		return exp;
+		exp = datesList.size() - 1;
+		if (datesList.size() == 1) {
+			exp = 0;
+		}
+		rexp = changeWeightedByYear(datesList);
+
+		if (!curFilePath.contains("/")) {
+			System.out.println("cur file not in ang subsystem!");
+		} else {
+			String subsystem = curFilePath.split("/")[0];
+			int count = 0;
+			int curIdInExtraction1 = 0;
+			sql = "select id from extraction1 where commit_id=" + commitId
+					+ " and file_id=" + fileId;
+			resultSet = stmt.executeQuery(sql);
+			while (resultSet.next()) {
+				curIdInExtraction1 = resultSet.getInt(1);
+			}
+			sql = "select current_file_path from extraction1,actions,scmlog where extraction1.id<"
+					+ curIdInExtraction1
+					+ " and extraction1.commit_id=actions.commit_id and extraction1.file_id=actions.file_id"
+					+ " and actions.commit_id="
+					+ "scmlog.id and author_id="
+					+ curAuthor_id;
+			resultSet = stmt.executeQuery(sql);
+			while (resultSet.next()) {
+				String lastFilePath = resultSet.getString(1);
+				if (lastFilePath.split("/")[0].equals(subsystem)) {
+					count++;
+				}
+			}
+			sexp = count;
+		}
+
+		sql = "update extraction1 set EXP=" + exp + ",REXP=" + rexp + ",SEXP="
+				+ sexp;
+		stmt.executeUpdate(sql);
 	}
-	
-	
+
+	/**
+	 * 根据年份对change进行加权平均,以评估rexp.默认上次更改据现在不会超过9年.有点粗糙,比如,如果同年的一月和十二月的差距会算作零年,
+	 * 但是前年12月和后年一月会算作一年的差距.
+	 * 
+	 * @param datesList
+	 *            输入的做出change的年份list.其中最后一个元素为作者当前所做的change,也就是year为当前的标准(
+	 *            最新的year).
+	 * @return
+	 */
+	private float changeWeightedByYear(List<String> datesList) {
+		if (datesList.size()==1) {
+			return 0;
+		}
+		int[] yearsToNow = new int[10];
+		int cur = getYearFromCommitdateString(datesList
+				.get(datesList.size() - 1));
+		for (int i = datesList.size() - 2; i >= 0; i--) {
+			int last = getYearFromCommitdateString(datesList.get(i));
+			yearsToNow[cur - last]++;
+		}
+		float res = 0f;
+		for (int i = 0; i < yearsToNow.length; i++) {
+			res = res + (float) yearsToNow[i] / (i + 1);
+		}
+		return res;
+	}
+
+	/**
+	 * 根据数据库中的commit_date的字符串,获取commit_date的年份.
+	 * 
+	 * @param string
+	 * @return
+	 */
+	private int getYearFromCommitdateString(String commit_date) {
+		return Integer.parseInt(commit_date.split(" ")[0].split("-")[0]);
+	}
+
 }

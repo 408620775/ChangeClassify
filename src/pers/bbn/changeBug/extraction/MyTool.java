@@ -7,8 +7,8 @@ import java.util.List;
  * @author niu
  *
  */
-public class MathOperation {
-	private MathOperation(){
+public class MyTool {
+	private MyTool(){
 		
 	}
 	/**
@@ -36,5 +36,35 @@ public class MathOperation {
 			entropy-=ratio*(Math.log(ratio)/Math.log(2));
 		}
 		return entropy;
+	}
+	/**
+	 * 格式化打印数据库数据,每个条目是一个list.
+	 * @param data
+	 */
+	public static void printDBdata(List<List<String>> datas) {
+		if (datas==null) {
+			return;
+		}
+		int[] lengths=new int[datas.get(0).size()];
+		for (List<String> data: datas) {
+			for (int i = 0; i < data.size(); i++) {
+				if (data.get(i).length()>lengths[i]) {
+					lengths[i]=data.get(i).length();
+				}
+			}
+		}
+		for (List<String> data : datas) {
+			for (int i = 0; i < data.size(); i++) {
+				if (data.get(i).length()<=lengths[i]) {
+					String tmp=data.get(i);
+					for (int j = 0; j < lengths[i]-data.get(i).length(); j++) {
+						tmp=tmp+" ";
+					}
+					System.out.print(tmp+"  ");
+					System.out.print("|  ");
+				}
+			}
+			System.out.println();
+		}
 	}
 }
