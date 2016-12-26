@@ -594,15 +594,16 @@ public final class Extraction1 extends Extraction {
 	 * @throws SQLException
 	 */
 	public void diffusion() throws SQLException {
-		sql = "desc extraction1";
-		resultSet = stmt.executeQuery(sql);
-		Set<String> column = new HashSet<>();
-		while (resultSet.next()) {
-			column.add(resultSet.getString(1));
+		if (curAttributes == null) {
+			obtainCurAttributes();
 		}
-		if (!column.contains("ns")) {
+		if (!curAttributes.contains("ns")) {
 			sql = "alter table extraction1 add (ns int(4),nd int(4),nf int(4),entropy float)";
 			stmt.executeUpdate(sql);
+			curAttributes.add("ns");
+			curAttributes.add("nd");
+			curAttributes.add("nf");
+			curAttributes.add("entropy");
 		}
 		for (Integer commitId : commitIdPart) {
 			Set<String> subsystem = new HashSet<>();
@@ -660,15 +661,15 @@ public final class Extraction1 extends Extraction {
 	 * @throws SQLException
 	 */
 	public void size() throws SQLException {
-		sql = "desc extraction1";
-		resultSet = stmt.executeQuery(sql);
-		Set<String> column = new HashSet<>();
-		while (resultSet.next()) {
-			column.add(resultSet.getString(1));
+		if (curAttributes == null) {
+			obtainCurAttributes();
 		}
-		if (!column.contains("la")) {
+		if (!curAttributes.contains("la")) {
 			sql = "alter table extraction1 add (la int,ld int,lt int)";
 			stmt.executeUpdate(sql);
+			curAttributes.add("la");
+			curAttributes.add("ld");
+			curAttributes.add("lt");
 		}
 
 		List<List<Integer>> re = new ArrayList<>();
@@ -762,6 +763,7 @@ public final class Extraction1 extends Extraction {
 		if (!curAttributes.contains("fix")) {
 			sql = "alter table extraction1 add fix tinyint(1) default 0";
 			stmt.executeUpdate(sql);
+			curAttributes.add("fix");
 		}
 		for (Integer integer : commitIdPart) {
 			sql = "UPDATE extraction1,scmlog SET fix=is_bug_fix where extraction1.commit_id=scmlog.id and extraction1.commit_id="
@@ -784,6 +786,9 @@ public final class Extraction1 extends Extraction {
 		if (!curAttributes.contains("NEDV")) {
 			sql = "ALTER TABLE extraction1 ADD (NEDV int,AGE long,NUC int)";
 			stmt.executeUpdate(sql);
+			curAttributes.add("NEDV");
+			curAttributes.add("AGE");
+			curAttributes.add("NUC");
 		}
 		if (commit_file_inExtracion1 == null) {
 			obtainCFidInExtraction1();
@@ -964,6 +969,9 @@ public final class Extraction1 extends Extraction {
 		if (!curAttributes.contains("EXP")) {
 			sql = "ALTER TABLE extraction1 ADD (EXP int,REXP float,SEXP int)";
 			stmt.executeUpdate(sql);
+			curAttributes.add("EXP");
+			curAttributes.add("REXP");
+			curAttributes.add("SEXP");
 		}
 		if (commit_file_inExtracion1 == null) {
 			obtainCFidInExtraction1();
