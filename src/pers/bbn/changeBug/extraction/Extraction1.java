@@ -605,12 +605,15 @@ public final class Extraction1 extends Extraction {
 			curAttributes.add("nf");
 			curAttributes.add("entropy");
 		}
-		for (Integer commitId : commitIdPart) {
+		if (commit_file_inExtracion1==null) {
+			obtainCFidInExtraction1();
+		}
+		for (List<Integer> commit_fileId : commit_file_inExtracion1) {
 			Set<String> subsystem = new HashSet<>();
 			Set<String> directories = new HashSet<>();
 			Set<String> files = new HashSet<>();
 			sql = "select current_file_path from actions where commit_id="
-					+ commitId;
+					+ commit_fileId.get(0);
 			resultSet = stmt.executeQuery(sql);
 			while (resultSet.next()) {
 				String pString = resultSet.getString(1);
@@ -626,7 +629,7 @@ public final class Extraction1 extends Extraction {
 				}
 			}
 			sql = "select changed_LOC from extraction1 where commit_id="
-					+ commitId;
+					+ commit_fileId.get(0);
 			resultSet = stmt.executeQuery(sql);
 			List<Integer> changeOfFile = new ArrayList<>();
 			while (resultSet.next()) {
@@ -636,7 +639,6 @@ public final class Extraction1 extends Extraction {
 			if (changeOfFile.size() == 0) {
 				continue;
 			}
-			System.out.println(commitId + ":" + changeOfFile);
 			float entropy = MyTool.calEntropy(changeOfFile);
 			float maxEntropy = (float) (Math.log(changeOfFile.size()) / Math
 					.log(2));
@@ -647,7 +649,7 @@ public final class Extraction1 extends Extraction {
 			}
 			sql = "UPDATE extraction1 SET ns=" + subsystem.size() + ",nd="
 					+ directories.size() + ",nf=" + files.size() + ",entropy="
-					+ entropy + " where commit_id=" + commitId;
+					+ entropy + " where commit_id=" + commit_fileId.get(0);
 			stmt.executeUpdate(sql);
 		}
 	}
@@ -860,7 +862,7 @@ public final class Extraction1 extends Extraction {
 		while (resultSet.next()) {
 			curType = resultSet.getString(1);
 		}
-		if (curType.equals("A")||curType.equals("C")) {
+		if (curType.equals("A") || curType.equals("C")) {
 			return curCommitId;
 		}
 		sql = "SELECT MAX(extraction1.id) from extraction1 where id<(select id from extraction1 where commit_id="
