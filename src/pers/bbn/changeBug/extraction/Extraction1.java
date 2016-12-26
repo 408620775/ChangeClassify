@@ -55,6 +55,16 @@ public final class Extraction1 extends Extraction {
 	}
 
 	/**
+	 * 有些操作仅仅连接数据库就行了,并不需要其他更具体的信息,比如执行sloc的函数.目前本构造函数也只是针对sloc更清晰而已.
+	 * 
+	 * @param database
+	 * @throws SQLException
+	 */
+	public Extraction1(String database) throws SQLException {
+		super(database);
+	}
+
+	/**
 	 * extraction1表中必须通过执行所有的实例才能获取的信息.
 	 * 
 	 * @throws Exception
@@ -564,16 +574,18 @@ public final class Extraction1 extends Extraction {
 	/**
 	 * 根据论文A Large-Scale Empirical Study Of Just-in-Time Quality
 	 * Assurance,增加分类实例的某些属性
+	 * 
 	 * @throws SQLException
 	 * @throws ParseException
 	 */
-	public void just_in_time() throws SQLException, ParseException{
+	public void just_in_time() throws SQLException, ParseException {
 		diffusion();
 		size();
 		purpose();
 		history();
 		experience();
 	}
+
 	/**
 	 * 根据论文A Large-Scale Empirical Study Of Just-in-Time Quality
 	 * Assurance,增加分类实例的diffusion(传播)属性.包括NS,ND,NF和Entropy四类.
@@ -965,12 +977,12 @@ public final class Extraction1 extends Extraction {
 	 * commitId对应的作者总共更改过多少次fileId文件(不包括当前的change,因为要预测当前是否引入缺陷)
 	 * .rexp标示根据时间距离现今的长短对rexp进行加权,时间单位为年.sexp为该作者对于当前子系统做过多少次更改.
 	 * 真正进行测试的时候发现exp和rexp的值基本一致,这是因为很少选定的范围内commit跨越了年.
+	 * 
 	 * @param integer
 	 * @param integer2
 	 * @throws SQLException
 	 */
-	public void updateExperience(int commitId, int fileId)
-			throws SQLException {
+	public void updateExperience(int commitId, int fileId) throws SQLException {
 		int firstAppearCommitId = getFirstAppearOfFile(commitId, fileId);
 		List<String> timeRange = getTimeRangeBetweenTwoCommit(
 				firstAppearCommitId, commitId);
@@ -1048,7 +1060,7 @@ public final class Extraction1 extends Extraction {
 	 * @return
 	 */
 	private float changeWeightedByYear(List<String> datesList) {
-		if (datesList.size()==1) {
+		if (datesList.size() == 1) {
 			return 0;
 		}
 		int[] yearsToNow = new int[10];
