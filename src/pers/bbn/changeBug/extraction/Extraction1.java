@@ -855,7 +855,7 @@ public final class Extraction1 extends Extraction {
 		while (resultSet.next()) {
 			curType = resultSet.getString(1);
 		}
-		if (curType.equals("A")) {
+		if (curType.equals("A")||curType.equals("C")) {
 			return curCommitId;
 		}
 		sql = "SELECT MAX(extraction1.id) from extraction1 where id<(select id from extraction1 where commit_id="
