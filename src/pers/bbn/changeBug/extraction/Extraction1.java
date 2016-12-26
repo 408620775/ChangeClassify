@@ -563,12 +563,25 @@ public final class Extraction1 extends Extraction {
 
 	/**
 	 * 根据论文A Large-Scale Empirical Study Of Just-in-Time Quality
+	 * Assurance,增加分类实例的某些属性
+	 * @throws SQLException
+	 * @throws ParseException
+	 */
+	public void just_in_time() throws SQLException, ParseException{
+		diffusion();
+		size();
+		purpose();
+		history();
+		experience();
+	}
+	/**
+	 * 根据论文A Large-Scale Empirical Study Of Just-in-Time Quality
 	 * Assurance,增加分类实例的diffusion(传播)属性.包括NS,ND,NF和Entropy四类.
 	 * 具体信息可参考论文中的定义.起始根据其实现,感觉此函数是针对commitId的,而非(commitId,fileId)对.
 	 * 
 	 * @throws SQLException
 	 */
-	public void Diffusion() throws SQLException {
+	public void diffusion() throws SQLException {
 		sql = "desc extraction1";
 		resultSet = stmt.executeQuery(sql);
 		Set<String> column = new HashSet<>();
