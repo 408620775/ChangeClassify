@@ -963,6 +963,7 @@ public final class Extraction1 extends Extraction {
 		}
 		if (!curAttributes.contains("EXP")) {
 			sql = "ALTER TABLE extraction1 ADD (EXP int,REXP float,SEXP int)";
+			stmt.executeUpdate(sql);
 		}
 		if (commit_file_inExtracion1 == null) {
 			obtainCFidInExtraction1();
