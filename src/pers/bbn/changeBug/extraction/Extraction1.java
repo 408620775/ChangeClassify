@@ -674,15 +674,18 @@ public final class Extraction1 extends Extraction {
 			curAttributes.add("lt");
 		}
 
+		if (commit_file_inExtracion1==null) {
+			obtainCFidInExtraction1();
+		}
 		List<List<Integer>> re = new ArrayList<>();
-		for (Integer integer : commitIdPart) {
+		for (List<Integer> list : commit_file_inExtracion1) {
 			sql = "select id,file_id from extraction1 where commit_id="
-					+ integer;
+					+ list.get(0);
 			resultSet = stmt.executeQuery(sql);
 			while (resultSet.next()) {
 				List<Integer> temp = new ArrayList<>();
 				temp.add(resultSet.getInt(1));
-				temp.add(integer);
+				temp.add(list.get(0));
 				temp.add(resultSet.getInt(2));
 				re.add(temp);
 			}
@@ -767,9 +770,12 @@ public final class Extraction1 extends Extraction {
 			stmt.executeUpdate(sql);
 			curAttributes.add("fix");
 		}
-		for (Integer integer : commitIdPart) {
+		if (commit_file_inExtracion1==null) {
+			obtainCFidInExtraction1();
+		}
+		for (List<Integer> list : commit_file_inExtracion1) {
 			sql = "UPDATE extraction1,scmlog SET fix=is_bug_fix where extraction1.commit_id=scmlog.id and extraction1.commit_id="
-					+ integer;
+					+ list.get(0);
 			stmt.executeUpdate(sql);
 		}
 	}
