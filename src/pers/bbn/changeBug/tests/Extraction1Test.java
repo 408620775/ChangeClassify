@@ -25,23 +25,22 @@ public class Extraction1Test {
 	static Extraction1 extraction1;
 	static Statement stmt;
 	static String sql;
-	static int testCommit_id = 875;
-	static int testFile_id = 1252;
+	static int testCommit_id = 821;
+	static int testFile_id = 1047;
 	static ResultSet resultSet;
 	@BeforeClass
 	public static void setup() throws Exception {
-		extraction1 = new Extraction1("MyVoldemort", 501, 800);
+		extraction1 = new Extraction1("MyLucene", 1001, 1500);
 		stmt = (Statement) extraction1.getConnection().getStmt();
 	}
 
-	@Test
+
 	public final void testObtainCurAttributes() throws SQLException {
 		List<String> curAtt = extraction1.getCurAttributes();
 		TestCase.assertTrue(curAtt.get(0).equals("id")
 				&& curAtt.get(1).equals("commit_id"));
 	}
 
-	@Test
 	public final void testGetCommit_file_inExtracion1() throws SQLException {
 		List<List<Integer>> commit_file_idInExtraction1 = extraction1
 				.getCommit_file_inExtracion1();
@@ -50,77 +49,22 @@ public class Extraction1Test {
 
 	@Test
 	public final void testGetFirstAppearOfFile() throws SQLException {
-		sql = "SELECT MAX(extraction1.id) from extraction1,actions where "
-				+ "extraction1.id<(select id from extraction1 where commit_id="
-				+ testCommit_id + " and file_id=" + testFile_id + ")"
-				+ "and extraction1.file_id=" + testFile_id
-				+ " and extraction1.commit_id=actions.commit_id"
-				+ " and extraction1.file_id=actions.file_id and type='A'";
-	 resultSet = stmt.executeQuery(sql);
-		int idInExtraction1 = 0;
-		while (resultSet.next()) {
-			idInExtraction1 = resultSet.getInt(1);
-		}
-		sql = "SELECT commit_id from extraction1 where id=" + idInExtraction1;
-		resultSet = stmt.executeQuery(sql);
-		int firstAddCommitId = 0;
-		while (resultSet.next()) {
-			firstAddCommitId = resultSet.getInt(1);
-		}
-
-		sql = "select commit_date from scmlog where id=" + firstAddCommitId;
-		resultSet = stmt.executeQuery(sql);
-		String startDate = null;
-		while (resultSet.next()) {
-			startDate = resultSet.getString(1);
-		}
-		sql = "select commit_date from scmlog where id=" + testCommit_id;
-		resultSet = stmt.executeQuery(sql);
-		String endDate = null;
-		while (resultSet.next()) {
-			endDate = resultSet.getString(1);
-		}
-		sql = "select actions.*,commit_date from actions,scmlog where file_id="
-				+ testFile_id
-				+ " and actions.commit_id=scmlog.id and commit_date between '"
-				+ startDate + "' and '" + endDate + "'";
-		resultSet = stmt.executeQuery(sql);
-		int typeD = 0;
-		int typeA = 0;
-		int firstCommitId = 0;
 		System.out.println("===============TestGetFirstAppearOfFile===============");
-		while (resultSet.next()) {
-			if (firstCommitId == 0) {
-				firstCommitId = resultSet.getInt(4);
-			}
-			System.out.println(resultSet.getInt(1) + "  |  "
-					+ resultSet.getString(2) + "  |  " + resultSet.getInt(3)
-					+ "  |  " + resultSet.getInt(4) + "  |  "
-					+ resultSet.getString(7));
-			if (resultSet.getString(2).equals("D")) {
-				typeD++;
-			} else if (resultSet.getString(2).equals("A")) {
-				typeA++;
-			}
-		}
-		TestCase.assertEquals(true, typeA == 1 && typeD == 0);
-		int getCommitId = extraction1.getFirstAppearOfFile(testCommit_id,
-				testFile_id);
-		TestCase.assertEquals(firstCommitId, getCommitId);
+		List<Integer> test=extraction1.getFirstAppearOfFile(testCommit_id, testFile_id);
+		System.out.println(test);
 	}
 
-	@Test
 	public final void testUpdateHistory() throws SQLException, ParseException {
 		extraction1.updateHistory(497, 686);
 	}
 
-	@Test
+
 	public final void testGetLastChangeOfFile() throws SQLException {
 		int lastCommitId = extraction1.getLastChangeOfFile(860, 1244);
 		TestCase.assertEquals(lastCommitId, 860);
 	}
 
-	@Test
+
 	public final void testUpdateExperience() throws SQLException {
 		System.out.println("===============TestUpdateExperience===============");
 		sql = "select commit_date,type,author_id,current_file_path,actions.commit_id,actions.file_id from actions,extraction1,scmlog"

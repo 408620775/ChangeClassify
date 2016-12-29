@@ -605,7 +605,7 @@ public final class Extraction1 extends Extraction {
 			curAttributes.add("nf");
 			curAttributes.add("entropy");
 		}
-		if (commit_file_inExtracion1==null) {
+		if (commit_file_inExtracion1 == null) {
 			obtainCFidInExtraction1();
 		}
 		for (List<Integer> commit_fileId : commit_file_inExtracion1) {
@@ -674,7 +674,7 @@ public final class Extraction1 extends Extraction {
 			curAttributes.add("lt");
 		}
 
-		if (commit_file_inExtracion1==null) {
+		if (commit_file_inExtracion1 == null) {
 			obtainCFidInExtraction1();
 		}
 		List<List<Integer>> re = new ArrayList<>();
@@ -770,7 +770,7 @@ public final class Extraction1 extends Extraction {
 			stmt.executeUpdate(sql);
 			curAttributes.add("fix");
 		}
-		if (commit_file_inExtracion1==null) {
+		if (commit_file_inExtracion1 == null) {
 			obtainCFidInExtraction1();
 		}
 		for (List<Integer> list : commit_file_inExtracion1) {
@@ -814,9 +814,12 @@ public final class Extraction1 extends Extraction {
 	 * @throws SQLException
 	 * @throws ParseException
 	 */
+	// FIXME
 	public void updateHistory(Integer curCommitId, Integer curFileId)
 			throws SQLException, ParseException {
-		int firstAddCommitId = getFirstAppearOfFile(curCommitId, curFileId);
+
+		int firstAddCommitId = getFirstAppearOfFile(curCommitId, curFileId)
+				.get(0);
 		List<String> timeRange = getTimeRangeBetweenTwoCommit(firstAddCommitId,
 				curCommitId);
 		String startTime = timeRange.get(0);
@@ -900,25 +903,58 @@ public final class Extraction1 extends Extraction {
 	 * @return 该文件对应的第一次被加入时的commit_id.
 	 * @throws SQLException
 	 */
-	public int getFirstAppearOfFile(int commit_id, int file_id)
+	public List<Integer> getFirstAppearOfFile(int commit_id, int file_id)
 			throws SQLException {
-		sql = "SELECT MAX(extraction1.id) from extraction1,actions where extraction1.id<=(select id from extraction1 where commit_id="
+		sql = "SELECT MIN(extraction1.id) from extraction1,actions where extraction1.id<=(select id from extraction1 where commit_id="
 				+ commit_id
 				+ " and file_id="
 				+ file_id
 				+ ") and extraction1.file_id="
 				+ file_id
-				+ " and extraction1.commit_id=actions.commit_id and extraction1.file_id=actions.file_id and type='A'";
+				+ " and extraction1.commit_id=actions.commit_id and extraction1.file_id=actions.file_id";
 		resultSet = stmt.executeQuery(sql);
 		int id = 0;
 		while (resultSet.next()) {
 			id = resultSet.getInt(1);
 		}
-		int res = 0;
-		sql = "select commit_id from extraction1 where id=" + id;
+		int firtAppearCommitIdOnCurBranch = 0;
+		String firstTypeOnCurBranch = null;
+		String fileName = null;
+		// 文件删除后file_id会不会重新分配?
+		sql = "select extraction1.commit_id,type,current_file_path from extraction1,actions where extraction1.id="
+				+ id
+				+ " and extraction1.commit_id=actions.commit_id and extraction1.file_id=actions.file_id";
 		resultSet = stmt.executeQuery(sql);
 		while (resultSet.next()) {
-			res = resultSet.getInt(1);
+			firtAppearCommitIdOnCurBranch = resultSet.getInt(1);
+			firstTypeOnCurBranch = resultSet.getString(2);
+			fileName = resultSet.getString(3);
+		}
+		if (fileName.contains("/")) {
+			fileName = fileName.substring(fileName.lastIndexOf("/"));
+			fileName = "/" + fileName;
+		}
+		List<Integer> res = new ArrayList<>();
+		if (firstTypeOnCurBranch.equals("A")
+				|| firstTypeOnCurBranch.equals("C")) {
+			res.add(firtAppearCommitIdOnCurBranch);
+			res.add(file_id);
+			return res;
+		}
+		sql = "select MAX(extraction1.id) from extraction1,actions where extraction1.id<"
+				+ id
+				+ " and extraction1.commit_id=actions.commit_id and extraction1.file_id=actions.file_id"
+				+ " and current_file_path like \"" + fileName + "\" and type='A'";
+		resultSet=stmt.executeQuery(sql);
+		int acturalId=0;
+		while (resultSet.next()) {
+			acturalId=resultSet.getInt(1);
+		}
+		sql="select commit_id,file_id from extraction1 where id="+acturalId;
+		resultSet=stmt.executeQuery(sql);
+		while (resultSet.next()) {
+			res.add(resultSet.getInt(1));
+			res.add(resultSet.getInt(2));
 		}
 		return res;
 	}
@@ -999,8 +1035,9 @@ public final class Extraction1 extends Extraction {
 	 * @param integer2
 	 * @throws SQLException
 	 */
+	// FIXME
 	public void updateExperience(int commitId, int fileId) throws SQLException {
-		int firstAppearCommitId = getFirstAppearOfFile(commitId, fileId);
+		int firstAppearCommitId = getFirstAppearOfFile(commitId, fileId).get(0);
 		List<String> timeRange = getTimeRangeBetweenTwoCommit(
 				firstAppearCommitId, commitId);
 		String startTime = timeRange.get(0);
