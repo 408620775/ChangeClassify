@@ -3,6 +3,7 @@
 import MySQLdb
 import os
 import sys
+import datetime
 
 class extraction1:
 	#定义构造方法  
@@ -34,8 +35,11 @@ class extraction1:
 			row=self.cursor.fetchone()
 			rev=row[0]
 			os.system('git reset --hard '+rev)
-			for fileName in self.commit_fileIdInExtraction1[key]:
-				os.system('git whatchanged '+fileName+' >>'+tmpFile)
+			for content in self.commit_fileIdInExtraction1[key]:
+				file_id=content[0]
+				file_name=content[1]
+				os.system('git whatchanged '+file_name+' >>'+tmpFile)
+				(nedv,age,nue)=dealWithGitLog(tmpFile)
 			
 			
 	
@@ -43,14 +47,15 @@ class extraction1:
 		myDict={}
 		count=0
 		for commit_id in commit_ids:
-			self.cursor.execute("select current_file_path from extraction1,actions where extraction1.commit_id="+str(commit_id)+" and extraction1.file_id=actions.file_id and extraction1.commit_id=actions.commit_id")
+			self.cursor.execute("select extraction1.file_id,current_file_path from extraction1,actions where extraction1.commit_id="+str(commit_id)+" and extraction1.file_id=actions.file_id and extraction1.commit_id=actions.commit_id")
 			row=self.cursor.fetchall()
 			if row:
 				if commit_id not in myDict.keys():
 					myDict[commit_id]=[]
 				for res in row:
 					count=count+1
-					myDict[commit_id].append(res[0])
+					tmp=[res[0],res[1]]
+					myDict[commit_id].append(tmp)
 					
 		print myDict
 		print "the num of total commit is "+str(len(myDict))+" and the total file is "+str(count)
@@ -59,7 +64,16 @@ class extraction1:
 	def __del__(self):
 		self.cursor.close ()  
 		self.conn.close ()	
-
+	
+	def dealWithGitLog(self,logFile):
+		f = open(logFile)
+		line=f.readline()
+		count=0;
+		authors=set()
+		###############################################################here###################################
+		while line:
+			if line.startswith('commit'):
+				  
 e=extraction1("MyVoldemort",501,505)
 e.history("/home/niu/test/voldemort")
 
