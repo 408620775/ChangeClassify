@@ -114,10 +114,11 @@ public class Sample {
 		int numSample = (int) Math.ceil(instances1.numInstances() * ratio); // 会不会由于实例数过多而崩溃？
 		int numNo = instances2.numInstances();
 		// instances2.randomize(random);
-		Random rn = new Random();
+		Random rn = new Random(1);
 		for (int i = 0; i < numSample; i++) {
 			instances1.add(instances2.instance(rn.nextInt(numNo)));
 		}
+		rn=new Random(instances1.numInstances());
 		instances1.randomize(rn);
 		return instances1;
 	}
@@ -204,7 +205,7 @@ public class Sample {
 			attInfo.addElement(temp);
 		}
 		Instances res = new Instances("Res", attInfo, totalNum);
-		Random rn = new Random();
+		Random rn = new Random(1);
 		for (int i = 0; i < totalNum; i++) {
 			res.add(init.instance(rn.nextInt(numInstance)));
 		}

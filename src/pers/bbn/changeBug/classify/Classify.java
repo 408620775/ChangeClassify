@@ -62,10 +62,10 @@ public class Classify {
 	 * @return 模型评估结果
 	 */
 	public List<Double> getRes() {
+		//return res;
 		List<Double> result = null;
 		try {
-			result = new ArrayList<Double>(res.size());
-			Collections.copy(result, res);
+			result = new ArrayList<Double>(res);
 			return result;
 		} catch (NullPointerException e) {
 			System.out.println("the list of result is null!");

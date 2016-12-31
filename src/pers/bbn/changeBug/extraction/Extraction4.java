@@ -10,6 +10,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -253,7 +254,7 @@ public class Extraction4 extends Extraction {
 		BufferedReader bReader = new BufferedReader(new FileReader(new File(
 				totalAttr)));
 		StringBuffer res = new StringBuffer();
-		Map<List<Integer>, StringBuffer> mapO = new HashMap<>();
+		Map<List<Integer>, StringBuffer> mapO = new LinkedHashMap<>();
 		String line;
 
 		line = bReader.readLine();

@@ -15,6 +15,7 @@ class extraction1:
 		row=self.cursor.fetchall()
 		self.commit_ids=[]
 		self.commit_fileIdInExtraction1={}
+		self.month={'Jan':1,'Feb':2,'Mar':3,'Apr':4,'May':5,'Jun':6,'Jul':7,'Aug':8,'Sep':9,'Oct':10,'Nov':11,'Dec':12}
 		for content in row[startNum-1:endNum]:
 			self.commit_ids.append(int(content[0]))
 		#print commit_ids,len(commit_ids)
@@ -39,7 +40,10 @@ class extraction1:
 				file_id=content[0]
 				file_name=content[1]
 				os.system('git whatchanged '+file_name+' >>'+tmpFile)
-				(nedv,age,nue)=dealWithGitLog(tmpFile)
+				(nedv,age,nuc)=self.dealWithGitLog(tmpFile)
+				print "nedv:",nedv
+				print "age:",age
+				print "nuc:",nuc
 			
 			
 	
@@ -67,12 +71,30 @@ class extraction1:
 	
 	def dealWithGitLog(self,logFile):
 		f = open(logFile)
-		line=f.readline()
 		count=0;
 		authors=set()
-		###############################################################here###################################
+		age=0
+		curDateTime=0
+		lastDateTime=0
+		line=f.readline()
 		while line:
-			if line.startswith('commit'):
+			if line.startswith('Author'):
+				count=count+1
+				author=line.split(':')[1].split('<')[0].strip()
+				authors.add(author)
+				if curDateTime==0:
+					line=f.readline()
+					array=line.split()
+					time=str(self.month[array[2]])+' '+array[3]+' '+array[4]+' '+array[5]
+					curDateTime=datetime.datetime.strptime(time,'%m %d %H:%M:%S %Y')
+				elif lastDateTime==0:
+					line=f.readline()
+					array=line.split()
+					time=str(self.month[array[2]])+' '+array[3]+' '+array[4]+' '+array[5]
+					lastDateTime=datetime.datetime.strptime(time,'%m %d %H:%M:%S %Y')
+			line=f.readline()
+		
+		return len(authors),(curDateTime-lastDateTime).seconds,count
 				  
 e=extraction1("MyVoldemort",501,505)
 e.history("/home/niu/test/voldemort")
