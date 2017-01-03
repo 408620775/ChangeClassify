@@ -32,6 +32,7 @@ class extraction1:
 		f=open(tmpFile,'w') #在脚本所在地创建临时文件
 		os.chdir(gitProject) #进入git工程所在目录
 		for key in self.commit_fileIdInExtraction1.keys():
+			print 'commitId:'+str(key)
 			self.cursor.execute("select rev from scmlog where id="+str(key))
 			row=self.cursor.fetchone()
 			rev=row[0]
@@ -39,11 +40,10 @@ class extraction1:
 			for content in self.commit_fileIdInExtraction1[key]:
 				file_id=content[0]
 				file_name=content[1]
-				os.system('git whatchanged '+file_name+' >>'+tmpFile)
+				print 'file_id:',file_id
+				os.system('git whatchanged '+file_name+' >'+tmpFile)
 				(nedv,age,nuc)=self.dealWithGitLog(tmpFile)
-				print "nedv:",nedv
-				print "age:",age
-				print "nuc:",nuc
+				self.cursor.execute('update extraction1 set NEDV='+str(nedv)+',AGE='+str(age)+',NUC='+str(nuc)+' where commit_id='+str(key)+' and file_id='+str(file_id))
 			
 			
 	
@@ -93,9 +93,10 @@ class extraction1:
 					time=str(self.month[array[2]])+' '+array[3]+' '+array[4]+' '+array[5]
 					lastDateTime=datetime.datetime.strptime(time,'%m %d %H:%M:%S %Y')
 			line=f.readline()
-		
+		if lastDateTime==0:
+			lastDateTime=curDateTime
 		return len(authors),(curDateTime-lastDateTime).seconds,count
 				  
-e=extraction1("MyVoldemort",501,505)
+e=extraction1("MyVoldemort",501,800)
 e.history("/home/niu/test/voldemort")
 

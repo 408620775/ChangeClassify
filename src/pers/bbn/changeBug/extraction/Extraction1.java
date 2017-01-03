@@ -382,6 +382,7 @@ public final class Extraction1 extends Extraction {
 	 * @throws Exception
 	 *             主要是为了想体验一下这个异常怎么用才加的，其实没啥用，因为bug_introducing非常不可能出现除0,1外的其他值。
 	 */
+	//FIXME 此函数也需要在resources包中的history.py中实现.
 	public void cumulative_bug_count() throws Exception {
 		System.out.println("get cumulative bug count");
 		sql = "select count(*) from extraction1";
@@ -787,7 +788,8 @@ public final class Extraction1 extends Extraction {
 	 * @throws SQLException
 	 * @throws ParseException
 	 */
-	public void history() throws SQLException, ParseException {
+	
+	private void history() throws SQLException, ParseException {
 		if (curAttributes == null) {
 			obtainCurAttributes();
 		}
@@ -962,13 +964,9 @@ public final class Extraction1 extends Extraction {
 	/**
 	 * 根据已存在的extraction1表,获得commit_id,file_id对,
 	 * 否则总是根据commitIdPart就总得去考虑文件类型是不是java文件,是否为test文件,而这一步起始在initial函数中已经做过了.
-	 * 之前有几个函数就是根据commitIdPart然后再判断文件类型来获取数据,那样的方法不可取,复杂度高而且容易出错,有时间的话需要重构.
-	 * 本来是不需要进行类型判断的,但是由于extraction1表中竟然还存在type为D的情况,但是initial()函数明明已经过滤了该类型的实例,
-	 * 所以目前还不知道到底是哪一步导致了extraction1中还有D类型的实例,所以只能再次判读.
 	 * 
 	 * @throws SQLException
 	 */
-	// FIXME
 	private void obtainCFidInExtraction1() throws SQLException {
 		commit_file_inExtracion1 = new ArrayList<>();
 		for (Integer integer : commitIdPart) {
