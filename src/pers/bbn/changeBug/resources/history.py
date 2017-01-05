@@ -4,6 +4,7 @@ import MySQLdb
 import os
 import sys
 import datetime
+import getopt
 
 class extraction1:
 	#定义构造方法  
@@ -27,7 +28,7 @@ class extraction1:
 			self.curAttributes.add(content[0])
 		if 'NEDV' not in self.curAttributes:
 			self.cursor.execute("ALTER TABLE extraction1 ADD (NEDV int,AGE long,NUC int)")
-			conn.commit()
+			self.conn.commit()
 		self.commit_fileIdInExtraction1=self.getCommitFileIdMap(self.commit_ids);
 		tmpFile=os.path.split( os.path.realpath( sys.argv[0] ) )[0]+'/tmp.txt'
 		f=open(tmpFile,'w') #在脚本所在地创建临时文件
@@ -45,7 +46,7 @@ class extraction1:
 				os.system('git whatchanged '+file_name+' >'+tmpFile)
 				(nedv,age,nuc)=self.dealWithGitLog(tmpFile)
 				self.cursor.execute('update extraction1 set NEDV='+str(nedv)+',AGE='+str(age)+',NUC='+str(nuc)+' where commit_id='+str(key)+' and file_id='+str(file_id))
-				conn.commit()
+				self.conn.commit()
 	
 	def getCommitFileIdMap(self,commit_ids):
 		myDict={}
@@ -99,7 +100,47 @@ class extraction1:
 		if lastDateTime==0:
 			lastDateTime=curDateTime
 		return len(authors),(curDateTime-lastDateTime).seconds,count
-				  
-e=extraction1("MyVoldemort",501,800)
-e.history("/home/niu/test/voldemort")
 
+def usage():
+	print """
+Obtain history infomation for the specified data range, and the result will be saved in the extraction1 table in the database which miningit obtain.
+
+Options:
+
+  -h, --help                     print this usage message.
+  -d,--database                  the database which will save the result.
+  -s, --start                    start commit_id of the  date range.
+  -e, --end                      end commit_id of the data range.
+  -g, --gitfile                  the git project which need to obtain the history information.
+"""				  
+
+def execute(argv,short_opts, long_opts):
+	opts, args = getopt.getopt(argv, short_opts, long_opts)
+	database=''
+	start=0
+	end=0
+	gitfile=''
+	for op, value in opts:
+        	if op in ("-d","--database"):
+            		database = value
+        	elif op in ("-s","--start"):
+            		start = value
+        	elif op in ("-e","--end"):
+            		end = value
+		elif op in ("-g","--gitfile"):
+			gitfile=value
+        	elif op in ("-h","--help"):
+            		usage()
+			return
+	print database,start,end,gitfile
+	if database and start and end and gitfile:
+		e=extraction1(database,int(start),int(end))
+		e.history(gitfile)
+	else:
+		print 'Parameter does not meet the requirements.'
+
+if __name__=='__main__':
+	short_opts="hd:s:e:g:"
+	long_opts=["help","database","start","end","gitfile"]
+	argv=sys.argv[1:]
+	execute(argv,short_opts, long_opts)
