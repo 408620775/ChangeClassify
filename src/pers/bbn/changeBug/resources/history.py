@@ -27,6 +27,7 @@ class extraction1:
 			self.curAttributes.add(content[0])
 		if 'NEDV' not in self.curAttributes:
 			self.cursor.execute("ALTER TABLE extraction1 ADD (NEDV int,AGE long,NUC int)")
+			conn.commit()
 		self.commit_fileIdInExtraction1=self.getCommitFileIdMap(self.commit_ids);
 		tmpFile=os.path.split( os.path.realpath( sys.argv[0] ) )[0]+'/tmp.txt'
 		f=open(tmpFile,'w') #在脚本所在地创建临时文件
@@ -44,8 +45,7 @@ class extraction1:
 				os.system('git whatchanged '+file_name+' >'+tmpFile)
 				(nedv,age,nuc)=self.dealWithGitLog(tmpFile)
 				self.cursor.execute('update extraction1 set NEDV='+str(nedv)+',AGE='+str(age)+',NUC='+str(nuc)+' where commit_id='+str(key)+' and file_id='+str(file_id))
-			
-			
+				conn.commit()
 	
 	def getCommitFileIdMap(self,commit_ids):
 		myDict={}
@@ -78,6 +78,9 @@ class extraction1:
 		lastDateTime=0
 		line=f.readline()
 		while line:
+			if line.startswith('commit'):
+				curRev=line.split()[1]
+				
 			if line.startswith('Author'):
 				count=count+1
 				author=line.split(':')[1].split('<')[0].strip()
