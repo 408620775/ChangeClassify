@@ -31,6 +31,7 @@ public class Extraction {
 	ResultSet resultSet;
 	List<Integer> commit_ids;
 	SQLConnection sqlL;
+	String databaseName;
 
 	/**
 	 * extraction2提取信息并不需要miningit生成的数据，此构造函数只是为了统一接口。
@@ -40,11 +41,10 @@ public class Extraction {
 	 */
 	public Extraction(String database) throws SQLException { // 为extraction2提供构造函数。
 		sqlL = new SQLConnection(database);
+		this.databaseName=database;
 		this.stmt = sqlL.getStmt();
 		commit_ids = new ArrayList<>();
 		sortCommit_id();
-		//start = 0; // 实际没有用到
-		//end = 0; // 实际没有用到
 	}
 
 	/**

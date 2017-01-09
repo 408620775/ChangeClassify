@@ -15,6 +15,7 @@ public class Main {
 
 	public static void main(String[] args) throws Exception {
 		Extraction1 extraction1=new Extraction1("MyVoldemort",501,800);
+		extraction1.just_in_time("/home/niu/test/voldemort");
 
 	}
 

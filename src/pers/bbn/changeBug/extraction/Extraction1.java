@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.sql.SQLException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -34,6 +35,8 @@ public final class Extraction1 extends Extraction {
 	private List<Integer> commitIdPart;
 	private List<String> curAttributes;
 	private List<List<Integer>> commit_file_inExtracion1;
+	private int startSId;
+	private int endSId;
 
 	/**
 	 * 提取第一部分change info，s为指定开始的commit_id，e为结束的commit_id
@@ -48,6 +51,8 @@ public final class Extraction1 extends Extraction {
 	 */
 	public Extraction1(String database, int s, int e) throws Exception {
 		super(database);
+		this.startSId = s;
+		this.endSId = e;
 		commitIdPart = new ArrayList<>();
 		for (int j = s - 1; j < e; j++) {
 			commitIdPart.add(commit_ids.get(j));
@@ -382,7 +387,7 @@ public final class Extraction1 extends Extraction {
 	 * @throws Exception
 	 *             主要是为了想体验一下这个异常怎么用才加的，其实没啥用，因为bug_introducing非常不可能出现除0,1外的其他值。
 	 */
-	//FIXME 此函数也需要在resources包中的history.py中实现.
+	// FIXME 此函数也需要在resources包中的history.py中实现.但是目前还没有发现其实现办法.
 	public void cumulative_bug_count() throws Exception {
 		System.out.println("get cumulative bug count");
 		sql = "select count(*) from extraction1";
@@ -575,15 +580,21 @@ public final class Extraction1 extends Extraction {
 	/**
 	 * 根据论文A Large-Scale Empirical Study Of Just-in-Time Quality
 	 * Assurance,增加分类实例的某些属性
+	 * .history属性的实现中,首先用到的是之前根据文件名或者file_id回找一个文件的历史记录,对于于history1
+	 * ()的实现.后来发现可以根据gitlog来更加准确的获取文件的历史改变记录
+	 * ,对应于histor2()的实现,history2()调用resource中的history.py
 	 * 
 	 * @throws SQLException
 	 * @throws ParseException
+	 * @throws InterruptedException
+	 * @throws IOException
 	 */
-	public void just_in_time() throws SQLException, ParseException {
+	public void just_in_time(String gitFile) throws SQLException,
+			ParseException, IOException, InterruptedException {
 		diffusion();
 		size();
 		purpose();
-		history();
+		history2(gitFile);
 		experience();
 	}
 
@@ -595,6 +606,7 @@ public final class Extraction1 extends Extraction {
 	 * @throws SQLException
 	 */
 	public void diffusion() throws SQLException {
+		System.out.println("Update Diffusion");
 		if (curAttributes == null) {
 			obtainCurAttributes();
 		}
@@ -664,6 +676,7 @@ public final class Extraction1 extends Extraction {
 	 * @throws SQLException
 	 */
 	public void size() throws SQLException {
+		System.out.println("Update Size");
 		if (curAttributes == null) {
 			obtainCurAttributes();
 		}
@@ -763,6 +776,7 @@ public final class Extraction1 extends Extraction {
 	 * @throws SQLException
 	 */
 	public void purpose() throws SQLException {
+		System.out.println("Update purpose");
 		if (curAttributes == null) {
 			obtainCurAttributes();
 		}
@@ -782,14 +796,39 @@ public final class Extraction1 extends Extraction {
 	}
 
 	/**
+	 * 根据git log信息来update实例的history信息,相比history1更加准确,但是时间也相对会长一些.
+	 * 
+	 * @throws IOException
+	 * @throws InterruptedException
+	 */
+	private void history2(String gitFile) throws IOException,
+			InterruptedException {
+		System.out.println("Update history With Python");
+		String command = "python " + System.getProperty("user.dir")
+				+ "/src/pers/bbn/changeBug/resources/history.py -d "
+				+ databaseName + " -s " + startSId + " -e " + endSId + " -g "
+				+ gitFile;
+		Process pythonProcess = Runtime.getRuntime().exec(command);
+		BufferedReader bReader = new BufferedReader(new InputStreamReader(
+				pythonProcess.getInputStream()));
+		String line;
+		while ((line = bReader.readLine()) != null) {
+			System.out.println(line);
+		}
+		pythonProcess.waitFor();
+	}
+
+	/**
 	 * 根据论文A Large-Scale Empirical Study Of Just-in-Time Quality
 	 * Assurance,增加分类实例的历史信息,包括NDEV,AGE,NUC三部分,具体含义见论文.
 	 * 
 	 * @throws SQLException
 	 * @throws ParseException
 	 */
-	
-	private void history() throws SQLException, ParseException {
+
+	@SuppressWarnings("unused")
+	private void history1() throws SQLException, ParseException {
+		System.out.println("Update history");
 		if (curAttributes == null) {
 			obtainCurAttributes();
 		}
@@ -816,7 +855,6 @@ public final class Extraction1 extends Extraction {
 	 * @throws SQLException
 	 * @throws ParseException
 	 */
-	// FIXME
 	public void updateHistory(Integer curCommitId, Integer curFileId)
 			throws SQLException, ParseException {
 
@@ -946,14 +984,16 @@ public final class Extraction1 extends Extraction {
 		sql = "select MAX(extraction1.id) from extraction1,actions where extraction1.id<"
 				+ id
 				+ " and extraction1.commit_id=actions.commit_id and extraction1.file_id=actions.file_id"
-				+ " and current_file_path like \"" + fileName + "\" and type='A'";
-		resultSet=stmt.executeQuery(sql);
-		int acturalId=0;
+				+ " and current_file_path like \""
+				+ fileName
+				+ "\" and type='A'";
+		resultSet = stmt.executeQuery(sql);
+		int acturalId = 0;
 		while (resultSet.next()) {
-			acturalId=resultSet.getInt(1);
+			acturalId = resultSet.getInt(1);
 		}
-		sql="select commit_id,file_id from extraction1 where id="+acturalId;
-		resultSet=stmt.executeQuery(sql);
+		sql = "select commit_id,file_id from extraction1 where id=" + acturalId;
+		resultSet = stmt.executeQuery(sql);
 		while (resultSet.next()) {
 			res.add(resultSet.getInt(1));
 			res.add(resultSet.getInt(2));
@@ -1005,6 +1045,7 @@ public final class Extraction1 extends Extraction {
 	 * @throws SQLException
 	 */
 	public void experience() throws SQLException {
+		System.out.println("Update Experience");
 		if (curAttributes == null) {
 			obtainCurAttributes();
 		}
