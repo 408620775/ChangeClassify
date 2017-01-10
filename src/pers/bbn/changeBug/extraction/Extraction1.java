@@ -595,7 +595,6 @@ public final class Extraction1 extends Extraction {
 		size();
 		purpose();
 		history2(gitFile);
-		experience();
 	}
 
 	/**
@@ -1044,6 +1043,7 @@ public final class Extraction1 extends Extraction {
 	 * 
 	 * @throws SQLException
 	 */
+	@SuppressWarnings("unused")
 	public void experience() throws SQLException {
 		System.out.println("Update Experience");
 		if (curAttributes == null) {

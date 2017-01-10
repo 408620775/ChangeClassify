@@ -29,24 +29,46 @@ class extraction1:
 		if 'NEDV' not in self.curAttributes:
 			self.cursor.execute("ALTER TABLE extraction1 ADD (NEDV int,AGE long,NUC int)")
 			self.conn.commit()
+		if 'EXP' not in self.curAttributes:
+			self.cursor.execute("ALTER TABLE extraction1 ADD (EXP int,REXP float,SEXP int)")
+			self.conn.commit()
 		self.commit_fileIdInExtraction1=self.getCommitFileIdMap(self.commit_ids);
 		tmpFile=os.path.split( os.path.realpath( sys.argv[0] ) )[0]+'/tmp.txt'
 		f=open(tmpFile,'w') #在脚本所在地创建临时文件
 		os.chdir(gitProject) #进入git工程所在目录
 		for key in self.commit_fileIdInExtraction1.keys():
-			print 'commitId:'+str(key)
-			self.cursor.execute("select rev from scmlog where id="+str(key))
-			row=self.cursor.fetchone()
-			rev=row[0]
-			os.system('git reset --hard '+rev)
-			for content in self.commit_fileIdInExtraction1[key]:
-				file_id=content[0]
-				file_name=content[1]
-				print 'file_id:',file_id
-				os.system('git whatchanged '+file_name+' >'+tmpFile)
-				(nedv,age,nuc)=self.dealWithGitLog(tmpFile)
-				self.cursor.execute('update extraction1 set NEDV='+str(nedv)+',AGE='+str(age)+',NUC='+str(nuc)+' where commit_id='+str(key)+' and file_id='+str(file_id))
-				self.conn.commit()
+			self.updateHistoryForCommit(key)
+
+	
+	def updateHistoryForCommit(self,key):
+		print 'commitId:'+str(key)
+		self.cursor.execute("select rev,commit_date,author_id from scmlog where id="+str(key))
+		row=self.cursor.fetchone()
+		rev=row[0]
+		commit_date=row[1]
+		author_id=row[2]
+		os.system('git reset --hard '+rev)
+		for content in self.commit_fileIdInExtraction1[key]:
+			file_id=content[0]
+			file_name=content[1]
+			print 'file_id:',file_id
+			tmpFile='tmp.txt'
+			os.system('git whatchanged '+file_name+' >'+tmpFile)
+			(nedv,age,nuc,rexp)=self.dealWithGitLog(tmpFile)
+			self.cursor.execute("select current_file_path from extraction1,scmlog,actions where extraction1.commit_id=scmlog.id and author_id="+str(author_id)+" and commit_date<'"+str(commit_date)+"' and extraction1.commit_id=actions.commit_id and extraction1.file_id=actions.file_id")
+			row=self.cursor.fetchall()
+			exp=0
+			sexp=0
+			if '/' in file_name:
+				subSystem=file_name.split('/')[0]
+			for res in row:
+				exp=exp+1
+				if res[0].startswith(subSystem):
+					sexp=sexp+1
+			finalOrder='update extraction1 set NEDV='+str(nedv)+',AGE='+str(age)+',NUC='+str(nuc)+',EXP='+str(exp)+',REXP='+str(rexp)+',SEXP='+str(sexp)+' where commit_id='+str(key)+' and file_id='+str(file_id)
+			print finalOrder
+			self.cursor.execute(finalOrder)
+			self.conn.commit()	
 	
 	def getCommitFileIdMap(self,commit_ids):
 		myDict={}
@@ -78,29 +100,52 @@ class extraction1:
 		curDateTime=0
 		lastDateTime=0
 		line=f.readline()
+		curAuthor=''
+		exp=0
+		rexp={}
 		while line:
 			if line.startswith('commit'):
-				curRev=line.split()[1]
-				
+				curRev=line.split()[1]				
 			if line.startswith('Author'):
 				count=count+1
 				author=line.split(':')[1].split('<')[0].strip()
 				authors.add(author)
-				if curDateTime==0:
+				if curAuthor=='':
+					curAuthor=author
 					line=f.readline()
-					array=line.split()
-					time=str(self.month[array[2]])+' '+array[3]+' '+array[4]+' '+array[5]
-					curDateTime=datetime.datetime.strptime(time,'%m %d %H:%M:%S %Y')
-				elif lastDateTime==0:
+					curDateTime=self.strToDateTime(line)
+				elif author==curAuthor:
+					exp=exp+1
 					line=f.readline()
-					array=line.split()
-					time=str(self.month[array[2]])+' '+array[3]+' '+array[4]+' '+array[5]
-					lastDateTime=datetime.datetime.strptime(time,'%m %d %H:%M:%S %Y')
+					lastDateTimeCur=self.strToDateTime(line)
+					if lastDateTime==0:
+						lastDateTime=lastDateTimeCur
+					key=(curDateTime-lastDateTimeCur).days/365
+					if rexp.has_key(key+1):
+						rexp[key+1]=rexp[key+1]+1
+					else:
+						rexp[key+1]=1
+				else:
+					if lastDateTime==0:
+						line=f.readline()
+						lastDateTime=self.strToDateTime(line)
 			line=f.readline()
 		if lastDateTime==0:
 			lastDateTime=curDateTime
-		return len(authors),(curDateTime-lastDateTime).seconds,count
-
+		rexpValue=0.0
+		print 'rexp',rexp
+		if len(rexp)!=0:
+			for key in rexp:
+				rexpValue=rexpValue+float(rexp[key])/key
+				
+		return len(authors),(curDateTime-lastDateTime).seconds,count,rexpValue
+	
+	def strToDateTime(self,line):
+		array=line.split()
+		time=str(self.month[array[2]])+' '+array[3]+' '+array[4]+' '+array[5]
+		covertTime=datetime.datetime.strptime(time,'%m %d %H:%M:%S %Y')
+		return covertTime
+		
 def usage():
 	print """
 Obtain history infomation for the specified data range, and the result will be saved in the extraction1 table in the database which miningit obtain.
@@ -144,3 +189,6 @@ if __name__=='__main__':
 	long_opts=["help","database","start","end","gitfile"]
 	argv=sys.argv[1:]
 	execute(argv,short_opts, long_opts)
+	tmpFile='tmp.txt'
+	#if os.path.exists(tmpFile):
+		#os.remove(tmpFile)
