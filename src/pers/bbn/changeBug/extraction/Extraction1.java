@@ -800,18 +800,24 @@ public final class Extraction1 extends Extraction {
 	 * @throws IOException
 	 * @throws InterruptedException
 	 */
-	private void history2(String gitFile) throws IOException,
+	//
+	public void history2(String gitFile) throws IOException,
 			InterruptedException {
 		System.out.println("Update history With Python");
 		String command = "python " + System.getProperty("user.dir")
 				+ "/src/pers/bbn/changeBug/resources/history.py -d "
 				+ databaseName + " -s " + startSId + " -e " + endSId + " -g "
 				+ gitFile;
+		System.out.println(command);
 		Process pythonProcess = Runtime.getRuntime().exec(command);
 		BufferedReader bReader = new BufferedReader(new InputStreamReader(
 				pythonProcess.getInputStream()));
 		String line;
 		while ((line = bReader.readLine()) != null) {
+			System.out.println(line);
+		}
+		BufferedReader eReader=new BufferedReader(new InputStreamReader(pythonProcess.getErrorStream()));
+		while ((line=eReader.readLine())!=null) {
 			System.out.println(line);
 		}
 		pythonProcess.waitFor();
