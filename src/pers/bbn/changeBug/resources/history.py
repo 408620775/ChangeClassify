@@ -206,5 +206,5 @@ if __name__=='__main__':
 	argv=sys.argv[1:]
 	execute(argv,short_opts, long_opts)
 	tmpFile='tmp.txt'
-	#if os.path.exists(tmpFile):
-		#os.remove(tmpFile)
+	if os.path.exists(tmpFile):
+		os.remove(tmpFile)
