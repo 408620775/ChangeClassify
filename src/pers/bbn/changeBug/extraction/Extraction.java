@@ -69,13 +69,16 @@ public abstract class Extraction {
 			throw new Exception("end is larger than the total number of commits!");
 		}
 		for (int i = start-1; i < end; i++) {
-			sql="select file_id from actions where commit_id="+commit_ids.get(i)+" and type!='D'";
+			sql="select file_id,current_file_path from actions where commit_id="+commit_ids.get(i)+" and type!='D'";
 			resultSet=stmt.executeQuery(sql);
 			while (resultSet.next()) {
-				List<Integer> tmp=new ArrayList<>();
-				tmp.add(commit_ids.get(i));
-				tmp.add(resultSet.getInt(1));
-				commit_fileIds.add(tmp);
+				String current_file_path=resultSet.getString(2);
+				if (current_file_path.endsWith(".java")&&(!current_file_path.toLowerCase().contains("test"))) {
+					List<Integer> tmp=new ArrayList<>();
+					tmp.add(commit_ids.get(i));
+					tmp.add(resultSet.getInt(1));
+					commit_fileIds.add(tmp);
+				}
 			}
 		}
 	}
