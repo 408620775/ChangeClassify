@@ -51,6 +51,10 @@ public abstract class Extraction {
 		initialCommitFileIds();
 	}
 
+	/**
+	 * 根据给定的范围获取有效的commit_file对,也就是包括删除在内的记录对.
+	 * @throws Exception
+	 */
 	private void initialCommitFileIds() throws Exception {
 		List<Integer> commit_ids=new ArrayList<>();
 		sql = "select id from scmlog order by commit_date";
