@@ -13,6 +13,7 @@ import java.util.Calendar;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -32,11 +33,8 @@ import java.util.Set;
  *
  */
 public final class Extraction1 extends Extraction {
-	private List<Integer> commitIdPart;
 	private List<String> curAttributes;
 	private List<List<Integer>> commit_file_inExtracion1;
-	private int startSId;
-	private int endSId;
 
 	/**
 	 * 提取第一部分change info，s为指定开始的commit_id，e为结束的commit_id
@@ -50,23 +48,7 @@ public final class Extraction1 extends Extraction {
 	 * @throws Exception
 	 */
 	public Extraction1(String database, int s, int e) throws Exception {
-		super(database);
-		this.startSId = s;
-		this.endSId = e;
-		commitIdPart = new ArrayList<>();
-		for (int j = s - 1; j < e; j++) {
-			commitIdPart.add(commit_ids.get(j));
-		}
-	}
-
-	/**
-	 * 有些操作仅仅连接数据库就行了,并不需要其他更具体的信息,比如执行sloc的函数.目前本构造函数也只是针对sloc更清晰而已.
-	 * 
-	 * @param database
-	 * @throws SQLException
-	 */
-	public Extraction1(String database) throws SQLException {
-		super(database);
+		super(database, s, e);
 	}
 
 	/**
@@ -77,7 +59,6 @@ public final class Extraction1 extends Extraction {
 	public void mustTotal() throws Exception {
 		CreateTable();
 		initial();
-		cumulative_change_count();
 		bug_introducing();
 		cumulative_bug_count();
 	}
@@ -92,33 +73,6 @@ public final class Extraction1 extends Extraction {
 	 * @throws Exception
 	 */
 	public void canPart() throws Exception {
-		String name1 = null;
-		for (int i = 0; i < commitIdPart.size(); i++) {
-			sql = "select author_name from extraction1 where id=(select min(id) from extraction1 where commit_id="
-					+ commitIdPart.get(i) + ")";
-			resultSet = stmt.executeQuery(sql);
-			if (!resultSet.next()) {
-				continue;
-			} else {
-				name1 = resultSet.getString(1);
-				break;
-			}
-		}
-		String name2 = null;
-		for (int i = commitIdPart.size() - 1; i >= 0; i--) {
-			sql = "select author_name from extraction1 where id=(select max(id) from extraction1 where commit_id="
-					+ commitIdPart.get(i) + ")";
-			resultSet = stmt.executeQuery(sql);
-			if (!resultSet.next()) {
-				continue;
-			} else {
-				name2 = resultSet.getString(1);
-				break;
-			}
-		}
-		if (name1 != null && name2 != null) {
-			return;
-		}
 		author_name(false);
 		commit_day(false);
 		commit_hour(false);
@@ -147,20 +101,20 @@ public final class Extraction1 extends Extraction {
 	/**
 	 * 初始化表格。 根据指定范围内的按时间排序的commit列表（commit_ids）初始化extraction1。
 	 * 初始化内容包括id，commit_id，file_id。需要注意的是，目前只考虑java文件，且不考虑java中的测试文件
-	 * 所以在actions表中选择对应的项时需要进行过滤。参数表示想要提取file change信息的commit跨度
+	 * 所以在actions表中选择对应的项时需要进行过滤。由于SZZ算法需要回溯,所以在初始化extraction1表的时候需要考虑所有actions.
 	 * 
 	 * @throws SQLException
 	 */
 	public void initial() throws SQLException {
 		System.out.println("initial the table");
 		for (Integer integer : commit_ids) {
-			sql = "select commit_id,file_id,file_name,current_file_path from actions,files where commit_id="
-					+ integer + " and file_id=files.id and type!='D'"; // 只选取java文件,同时排除测试文件。
+			sql = "select commit_id,file_id,current_file_path from actions where commit_id="
+					+ integer + " and type!='D'"; // 只选取java文件,同时排除测试文件。
 			resultSet = stmt.executeQuery(sql);
 			List<List<Integer>> list = new ArrayList<>();
 			while (resultSet.next()) {
-				if (resultSet.getString(3).contains(".java")
-						&& (!resultSet.getString(4).toLowerCase()
+				if (resultSet.getString(3).endsWith(".java")
+						&& (!resultSet.getString(3).toLowerCase()
 								.contains("test"))) {
 					List<Integer> temp = new ArrayList<>();
 					temp.add(resultSet.getInt(1));
@@ -227,7 +181,6 @@ public final class Extraction1 extends Extraction {
 					+ "scmlog.id and scmlog.author_id=people.id";
 			stmt.executeUpdate(sql);
 		}
-
 	}
 
 	/**
@@ -431,11 +384,13 @@ public final class Extraction1 extends Extraction {
 	}
 
 	/**
-	 * 获取累计的change计数。
+	 * 获取累计的change计数。此函数版本是最初根据文件名来确定文件的历史更改的,这样做相对粗糙,精细的实现形式已经在history.py中实现,
+	 * 此处暂时废弃.
 	 * 
 	 * @throws SQLException
 	 */
-	public void cumulative_change_count() throws SQLException {
+	@SuppressWarnings("unused")
+	private void cumulative_change_count() throws SQLException {
 		System.out.println("get cumulative change count");
 		sql = "select count(*) from extraction1";
 		resultSet = stmt.executeQuery(sql);
@@ -514,7 +469,8 @@ public final class Extraction1 extends Extraction {
 	}
 
 	/**
-	 * 相比于老的bug_introducing函数,此函数运行更快.
+	 * bug_introducing函数,使用SZZ算法标记每个实例的类标签.需要注意的是在用SZZ回溯最近的一次更改的时候,
+	 * 使用的是file_name判定的,因为分支不同的话file_id基本不同,所以此时用file_name更好.
 	 * 
 	 * @throws SQLException
 	 */
@@ -538,46 +494,6 @@ public final class Extraction1 extends Extraction {
 	}
 
 	/**
-	 * 获取类标号。 对于表extraction1中的每个实例（每一行内容）标识其是否为引入bug。bug_introducing为每个实例的类标签，用于
-	 * 构建分类器。
-	 * 
-	 * @throws SQLException
-	 */
-	public void oldBug_introducing() throws SQLException {
-		List<Integer> ids = new ArrayList<>();
-		sql = "select id from scmlog where is_bug_fix=1";
-		resultSet = stmt.executeQuery(sql);
-		while (resultSet.next()) {
-			if (commit_ids.contains(resultSet.getInt(1))) {
-				ids.add(resultSet.getInt(1));
-			}
-		}
-
-		for (Integer integer : ids) {
-			sql = "select  id,file_id from hunks where commit_id=" + integer;
-			resultSet = stmt.executeQuery(sql);
-			List<List<Integer>> hunkFileId = new ArrayList<>(); // 有些只是行错位了也会被标记为bug_introducing。但是作为hunks的一部分好像也成。
-			while (resultSet.next()) {
-				List<Integer> temp = new ArrayList<>();
-				temp.add(resultSet.getInt(1));
-				temp.add(resultSet.getInt(2));
-				hunkFileId.add(temp);
-			}
-
-			for (List<Integer> integer2 : hunkFileId) {
-				sql = "update extraction1,files set  bug_introducing=1 where file_id=files.id and file_name= (select file_name from files where id="
-						+ integer2.get(1)
-						+ ")"
-						+ " and commit_id IN (select bug_commit_id "
-						+ "from hunk_blames where hunk_id="
-						+ integer2.get(0)
-						+ ")";
-				stmt.executeUpdate(sql);
-			}
-		}
-	}
-
-	/**
 	 * 根据论文A Large-Scale Empirical Study Of Just-in-Time Quality
 	 * Assurance,增加分类实例的某些属性
 	 * .history属性的实现中,首先用到的是之前根据文件名或者file_id回找一个文件的历史记录,对于于history1
@@ -591,9 +507,9 @@ public final class Extraction1 extends Extraction {
 	 */
 	public void just_in_time(String gitFile) throws SQLException,
 			ParseException, IOException, InterruptedException {
-		diffusion();
-		size();
-		purpose();
+		diffusion(false);
+		size(false);
+		purpose(false);
 		history2(gitFile);
 	}
 
@@ -601,10 +517,10 @@ public final class Extraction1 extends Extraction {
 	 * 根据论文A Large-Scale Empirical Study Of Just-in-Time Quality
 	 * Assurance,增加分类实例的diffusion(传播)属性.包括NS,ND,NF和Entropy四类.
 	 * 具体信息可参考论文中的定义.起始根据其实现,感觉此函数是针对commitId的,而非(commitId,fileId)对.
-	 * 
+	 * 此函数如果执行所有实例,那么它还依赖changed_LOC是否执行了所有函数.
 	 * @throws SQLException
 	 */
-	public void diffusion() throws SQLException {
+	public void diffusion(boolean excuteAll) throws SQLException {
 		System.out.println("Update Diffusion");
 		if (curAttributes == null) {
 			obtainCurAttributes();
@@ -617,10 +533,18 @@ public final class Extraction1 extends Extraction {
 			curAttributes.add("nf");
 			curAttributes.add("entropy");
 		}
-		if (commit_file_inExtracion1 == null) {
-			obtainCFidInExtraction1();
+		
+		List<List<Integer>> executeList=null;
+		if (excuteAll==true) {
+			if (commit_file_inExtracion1 == null) {
+				obtainCFidInExtraction1();
+			}
+			executeList=commit_file_inExtracion1;
+		}else {
+			executeList=commit_fileIds;
 		}
-		for (List<Integer> commit_fileId : commit_file_inExtracion1) {
+
+		for (List<Integer> commit_fileId : executeList) {
 			Set<String> subsystem = new HashSet<>();
 			Set<String> directories = new HashSet<>();
 			Set<String> files = new HashSet<>();
@@ -671,10 +595,10 @@ public final class Extraction1 extends Extraction {
 	 * Assurance,增加分类实例的size属性
 	 * ,包括la,ld,lt三类.但似乎这三类属性跟之前的属性或者extraction2中的一些属性重合度很高.
 	 * 值得注意的是,这个函数写的太烂了,跟之前的changed_LOC重合太多,但是由于创建这两个函数的时间维度不同,暂时保持这样.
-	 * 
+	 * 执行的部分依赖于之前sloc执行的部分.
 	 * @throws SQLException
 	 */
-	public void size() throws SQLException {
+	public void size(boolean excuteAll) throws SQLException {
 		System.out.println("Update Size");
 		if (curAttributes == null) {
 			obtainCurAttributes();
@@ -687,11 +611,18 @@ public final class Extraction1 extends Extraction {
 			curAttributes.add("lt");
 		}
 
-		if (commit_file_inExtracion1 == null) {
-			obtainCFidInExtraction1();
+		List<List<Integer>> executeList=null;
+		if (excuteAll==true) {
+			if (commit_file_inExtracion1 == null) {
+				obtainCFidInExtraction1();
+			}
+			executeList=commit_file_inExtracion1;
+		}else {
+			executeList=commit_fileIds;
 		}
+		
 		List<List<Integer>> re = new ArrayList<>();
-		for (List<Integer> list : commit_file_inExtracion1) {
+		for (List<Integer> list : executeList) {
 			sql = "select id,file_id from extraction1 where commit_id="
 					+ list.get(0);
 			resultSet = stmt.executeQuery(sql);
@@ -774,7 +705,7 @@ public final class Extraction1 extends Extraction {
 	 * 
 	 * @throws SQLException
 	 */
-	public void purpose() throws SQLException {
+	public void purpose(boolean excuteAll) throws SQLException {
 		System.out.println("Update purpose");
 		if (curAttributes == null) {
 			obtainCurAttributes();
@@ -784,10 +715,17 @@ public final class Extraction1 extends Extraction {
 			stmt.executeUpdate(sql);
 			curAttributes.add("fix");
 		}
-		if (commit_file_inExtracion1 == null) {
-			obtainCFidInExtraction1();
+		List<List<Integer>> executeList=null;
+		if (excuteAll==true) {
+			if (commit_file_inExtracion1 == null) {
+				obtainCFidInExtraction1();
+			}
+			executeList=commit_file_inExtracion1;
+		}else {
+			executeList=commit_fileIds;
 		}
-		for (List<Integer> list : commit_file_inExtracion1) {
+
+		for (List<Integer> list : executeList) {
 			sql = "UPDATE extraction1,scmlog SET fix=is_bug_fix where extraction1.commit_id=scmlog.id and extraction1.commit_id="
 					+ list.get(0);
 			stmt.executeUpdate(sql);
@@ -796,7 +734,7 @@ public final class Extraction1 extends Extraction {
 
 	/**
 	 * 根据git log信息来update实例的history信息,相比history1更加准确,但是时间也相对会长一些.
-	 * 
+	 * 由于时间复杂度相对较高,只提取指定范围内的history信息,不提取总体的信息.
 	 * @throws IOException
 	 * @throws InterruptedException
 	 */
@@ -806,7 +744,7 @@ public final class Extraction1 extends Extraction {
 		System.out.println("Update history With Python");
 		String command = "python " + System.getProperty("user.dir")
 				+ "/src/pers/bbn/changeBug/resources/history.py -d "
-				+ databaseName + " -s " + startSId + " -e " + endSId + " -g "
+				+ databaseName + " -s " + start + " -e " + end + " -g "
 				+ gitFile;
 		System.out.println(command);
 		Process pythonProcess = Runtime.getRuntime().exec(command);
@@ -816,8 +754,9 @@ public final class Extraction1 extends Extraction {
 		while ((line = bReader.readLine()) != null) {
 			System.out.println(line);
 		}
-		BufferedReader eReader=new BufferedReader(new InputStreamReader(pythonProcess.getErrorStream()));
-		while ((line=eReader.readLine())!=null) {
+		BufferedReader eReader = new BufferedReader(new InputStreamReader(
+				pythonProcess.getErrorStream()));
+		while ((line = eReader.readLine()) != null) {
 			System.out.println(line);
 		}
 		pythonProcess.waitFor();
@@ -854,13 +793,13 @@ public final class Extraction1 extends Extraction {
 
 	/**
 	 * 针对给定的commitId,fileId对,update其在extraction1表中的history属性.
-	 * 
+	 * 实现已经在history.py中实现了,其上层函数history1已经暂时废弃.
 	 * @param curCommitId
 	 * @param curFileId
 	 * @throws SQLException
 	 * @throws ParseException
 	 */
-	public void updateHistory(Integer curCommitId, Integer curFileId)
+	private void updateHistory(Integer curCommitId, Integer curFileId)
 			throws SQLException, ParseException {
 
 		int firstAddCommitId = getFirstAppearOfFile(curCommitId, curFileId)
@@ -901,13 +840,13 @@ public final class Extraction1 extends Extraction {
 
 	/**
 	 * 获取文件的上一次change.
-	 * 
+	 * 也在history.py中实现了,目前没有用了.
 	 * @param curCommitId
 	 * @param curFileId
 	 * @return 上一次修改的commit_id.
 	 * @throws SQLException
 	 */
-	public int getLastChangeOfFile(int curCommitId, int curFileId)
+	private int getLastChangeOfFile(int curCommitId, int curFileId)
 			throws SQLException {
 		sql = "SELECT type from actions where commit_id=" + curCommitId
 				+ " and file_id=" + curFileId;
@@ -941,14 +880,14 @@ public final class Extraction1 extends Extraction {
 
 	/**
 	 * 对于(commit_id,file_id)所对应的文件,返回该文件第一次出现,也就是该文件上次被add时的位置.默认为同一文件的file_id相同
-	 * .
+	 * .也在history.py中实现了.暂时没用了.
 	 * 
 	 * @param commit_id
 	 * @param file_id
 	 * @return 该文件对应的第一次被加入时的commit_id.
 	 * @throws SQLException
 	 */
-	public List<Integer> getFirstAppearOfFile(int commit_id, int file_id)
+	private List<Integer> getFirstAppearOfFile(int commit_id, int file_id)
 			throws SQLException {
 		sql = "SELECT MIN(extraction1.id) from extraction1,actions where extraction1.id<=(select id from extraction1 where commit_id="
 				+ commit_id
@@ -1046,11 +985,11 @@ public final class Extraction1 extends Extraction {
 	/**
 	 * 根据论文A Large-Scale Empirical Study Of Just-in-Time Quality
 	 * Assurance,增加分类实例的作者经验信息,包括EXP,REXP,SEXP三部分,具体含义见论文.
-	 * 
+	 * 已在history.py中实现,暂时废弃.
 	 * @throws SQLException
 	 */
 	@SuppressWarnings("unused")
-	public void experience() throws SQLException {
+	private void experience() throws SQLException {
 		System.out.println("Update Experience");
 		if (curAttributes == null) {
 			obtainCurAttributes();
@@ -1080,8 +1019,8 @@ public final class Extraction1 extends Extraction {
 	 * @param integer2
 	 * @throws SQLException
 	 */
-	// FIXME
-	public void updateExperience(int commitId, int fileId) throws SQLException {
+	//其上层函数已经被废弃,暂时没用了.好像还有点问题这个函数.
+	private void updateExperience(int commitId, int fileId) throws SQLException {
 		int firstAppearCommitId = getFirstAppearOfFile(commitId, fileId).get(0);
 		List<String> timeRange = getTimeRangeBetweenTwoCommit(
 				firstAppearCommitId, commitId);
@@ -1178,12 +1117,42 @@ public final class Extraction1 extends Extraction {
 
 	/**
 	 * 根据数据库中的commit_date的字符串,获取commit_date的年份.
-	 * 
+	 * 已在history.py中实现.暂时没用了.
 	 * @param string
 	 * @return
 	 */
 	private int getYearFromCommitdateString(String commit_date) {
 		return Integer.parseInt(commit_date.split(" ")[0].split("-")[0]);
+	}
+
+	@Override
+	public Map<List<Integer>, StringBuffer> getContentMap(
+			List<List<Integer>> someCommit_fileIds) throws SQLException {
+		Map<List<Integer>, StringBuffer> content = new LinkedHashMap<>();
+		for (List<Integer> commit_fileId : someCommit_fileIds) {
+			StringBuffer temp = new StringBuffer();
+			if (commit_fileId.get(0) == -1) {
+				sql = "select * from extraction1 where id=1";
+				resultSet = stmt.executeQuery(sql);
+				int colcount = resultSet.getMetaData().getColumnCount();
+				for (int i = 4; i <= colcount; i++) {
+					temp.append(resultSet.getMetaData().getColumnName(i) + ",");
+				}
+			} else {
+				sql = "select * from extraction1 where commit_id="
+						+ commit_fileId.get(0) + " and file_id="
+						+ commit_fileId.get(1);
+				resultSet = stmt.executeQuery(sql);
+				int colCount = resultSet.getMetaData().getColumnCount();
+				resultSet.next();
+				for (int i = 4; i <= colCount; i++) {
+					temp.append(resultSet.getString(i) + ",");
+				}
+
+			}
+			content.put(commit_fileId, temp);
+		}
+		return content;
 	}
 
 }
