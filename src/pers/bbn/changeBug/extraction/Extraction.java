@@ -5,6 +5,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 提取数据的超类。
@@ -25,11 +26,13 @@ import java.util.List;
  * @author niu
  *
  */
-public class Extraction {
+public abstract class Extraction {
     String sql;
     Statement stmt;
 	ResultSet resultSet;
-	List<Integer> commit_ids;
+	int start;
+	int end;
+	List<List<Integer>> commit_fileIds;
 	SQLConnection sqlL;
 	String databaseName;
 
@@ -37,36 +40,58 @@ public class Extraction {
 	 * extraction2提取信息并不需要miningit生成的数据，此构造函数只是为了统一接口。
 	 * 
 	 * @param database
-	 * @throws SQLException
+	 * @throws Exception 
 	 */
-	public Extraction(String database) throws SQLException { // 为extraction2提供构造函数。
-		sqlL = new SQLConnection(database);
+	public Extraction(String database,int start,int end) throws Exception  { // 为extraction2提供构造函数。	
+		this.start=start;
+		this.end=end;
 		this.databaseName=database;
+		this.sqlL = new SQLConnection(database);
 		this.stmt = sqlL.getStmt();
-		commit_ids = new ArrayList<>();
-		sortCommit_id();
+		initialCommitFileIds();
 	}
 
-	/**
-	 * 按时间序返回commit_id列表。
-	 * 
-	 * @return 按时间排序的指定范围内的commit_id列表。
-	 */
-	public List<Integer> getCommit_id() {
-		return commit_ids;
-	}
-
-	/**
-	 * 提取scmlog中全部的commit_id（按时间排序）。
-	 * 
-	 * @throws SQLException
-	 */
-	public void sortCommit_id() throws SQLException {
+	private void initialCommitFileIds() throws Exception {
+		List<Integer> commit_ids=new ArrayList<>();
 		sql = "select id from scmlog order by commit_date";
 		resultSet = stmt.executeQuery(sql);
 		while (resultSet.next()) {
 			commit_ids.add(resultSet.getInt(1));
 		}
+		if (start<0) {
+			throw new Exception("start can't be less 0!");
+		}
+		if (end>commit_ids.size()) {
+			throw new Exception("end is larger than the total number of commits!");
+		}
+		for (int i = start-1; i < end; i++) {
+			sql="select file_id from actions where commit_id="+commit_ids.get(i)+" and type!='D'";
+			resultSet=stmt.executeQuery(sql);
+			while (resultSet.next()) {
+				List<Integer> tmp=new ArrayList<>();
+				tmp.add(commit_ids.get(i));
+				tmp.add(resultSet.getInt(1));
+				commit_fileIds.add(tmp);
+			}
+		}
 	}
+
+	/**
+	 * 按时间序返回有效的commit_fileId列表。
+	 * 
+	 * @return 按时间排序的指定范围内的commit_id列表。
+	 */
+	public List<List<Integer>> getCommit_FileIds() {
+		return commit_fileIds;
+	}
+
+	/**
+	 * 根据给定的一组commit_fileId对,获取其对应的内容.
+	 * 需要注意的是stringBuffer格式的content后面以逗号结尾
+	 * @param commit_fileIds
+	 * @return
+	 * @throws SQLException
+	 */
+	public abstract Map<List<Integer>, StringBuffer> getContentMap(List<List<Integer>> someCommit_fileIds) throws SQLException;
 
 }
