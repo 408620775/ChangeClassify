@@ -33,6 +33,8 @@ public abstract class Extraction {
 	int start;
 	int end;
 	List<List<Integer>> commit_fileIds;
+	List<Integer> commit_ids;
+	List<Integer> commitIdPart;
 	SQLConnection sqlL;
 	String databaseName;
 
@@ -56,7 +58,8 @@ public abstract class Extraction {
 	 * @throws Exception
 	 */
 	private void initialCommitFileIds() throws Exception {
-		List<Integer> commit_ids=new ArrayList<>();
+		commit_ids=new ArrayList<>();
+		commitIdPart=new ArrayList<>();
 		sql = "select id from scmlog order by commit_date";
 		resultSet = stmt.executeQuery(sql);
 		while (resultSet.next()) {
@@ -78,6 +81,7 @@ public abstract class Extraction {
 					tmp.add(commit_ids.get(i));
 					tmp.add(resultSet.getInt(1));
 					commit_fileIds.add(tmp);
+					commitIdPart.add(resultSet.getInt(commit_ids.get(i)));
 				}
 			}
 		}
