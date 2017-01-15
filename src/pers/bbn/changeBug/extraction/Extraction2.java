@@ -10,11 +10,11 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.TreeSet;
 
 /**
  * 针对某范围内的(commit_id,file_id)对，得到其对应的文件(curFiles),并根据patch得到每个文件的上一次更改时的版本(
@@ -44,23 +44,12 @@ import java.util.TreeSet;
  *
  */
 public final class Extraction2 extends Extraction {
-	private int startId;
-	private int endId;
 	private Set<String> curFiles;
 	private Set<String> preFiles;
 	private Set<String> attributes;
 	private Map<String, Map<String, Double>> grid;
 	private Map<List<Integer>, StringBuffer> contentMap;
-	private List<List<Integer>> id_commitId_fileIds;
-
-	/**
-	 * 获取主键队列.
-	 * 
-	 * @return
-	 */
-	public List<List<Integer>> getId_commitId_fileIds() {
-		return id_commitId_fileIds;
-	}
+	private List<List<Integer>> commitId_fileIds;
 
 	// 不包括id,commit_id,file_id
 	/**
@@ -69,43 +58,11 @@ public final class Extraction2 extends Extraction {
 	 * @param database
 	 * @param sCommitId
 	 * @param eCommitId
-	 * @throws SQLException
+	 * @throws Exception
 	 */
 	public Extraction2(String database, int sCommitId, int eCommitId)
-			throws SQLException {
-		super(database);
-		int i = 1;
-		while (sCommitId - i > 0) {
-			sql = "select min(id) from extraction1 where commit_id="
-					+ commit_ids.get(sCommitId - i);
-			resultSet = stmt.executeQuery(sql);
-			while (resultSet.next()) {
-				startId = resultSet.getInt(1);
-			}
-			if (startId != 0) {
-				break;
-			}
-			i--;
-		}
-		System.out.println("the start commit_id is "
-				+ commit_ids.get(sCommitId - i));
-		i = 1;
-		while (eCommitId - i > 0) {
-			sql = "select max(id) from extraction1 where commit_id="
-					+ commit_ids.get(eCommitId - i);
-			resultSet = stmt.executeQuery(sql);
-			while (resultSet.next()) {
-				endId = resultSet.getInt(1);
-			}
-			if (endId != 0) {
-				break;
-			}
-			i++;
-		}
-		System.out.println("the end commit_id is "
-				+ commit_ids.get(eCommitId - i));
-		System.out.println("起始id号:" + startId + " 结束id号: " + endId);
-
+			throws Exception {
+		super(database, sCommitId, eCommitId);
 	}
 
 	/**
@@ -120,33 +77,38 @@ public final class Extraction2 extends Extraction {
 			file.createNewFile();
 		}
 		BufferedWriter bWriter = new BufferedWriter(new FileWriter(file));
-		if (startId > endId || startId < 0) {
+		if (start > end || start < 0) {
 			bWriter.close();
 			return;
 		}
-		sql = "select extraction1.commit_id,extraction1.file_id,rev,current_file_path,bug_introducing from extraction1,scmlog,actions where extraction1.id>="
-				+ startId
-				+ " and extraction1.id<="
-				+ endId
-				+ " and extraction1.commit_id=scmlog.id and extraction1.commit_id=actions.commit_id and extraction1.file_id=actions.file_id and type!='D'";
-		resultSet = stmt.executeQuery(sql);
-		int total=0;
-		int numBug=0;
-		while (resultSet.next()) {
-			bWriter.append(resultSet.getInt(1) + "   " + resultSet.getInt(2)
-					+ "   " + resultSet.getString(3) + "   "
-					+ resultSet.getString(4));
-			bWriter.append("\n");
-			if (resultSet.getInt(5)==1) {
-				numBug++;
+		int total = 0;
+		int numBug = 0;
+		for (List<Integer> commit_fileId : commit_fileIds) {
+			sql = "select extraction1.commit_id,extraction1.file_id,rev,current_file_path,bug_introducing from extraction1,"
+					+ "scmlog,actions where extraction1.commit_id="
+					+ commit_fileId.get(0)
+					+ " and extraction1.file_id="
+					+ commit_fileId.get(1)
+					+ " and extraction1.commit_id=scmlog.id and extraction1.commit_id=actions.commit_id "
+					+ "and extraction1.file_id=actions.file_id";
+			resultSet = stmt.executeQuery(sql);
+			while (resultSet.next()) {
+				bWriter.append(resultSet.getInt(1) + "   " + resultSet.getInt(2)
+						+ "   " + resultSet.getString(3) + "   "
+						+ resultSet.getString(4));
+				bWriter.append("\n");
+				if (resultSet.getInt(5) == 1) {
+					numBug++;
+				}
+				total++;
 			}
-			total++;
 		}
+
 		bWriter.flush();
 		bWriter.close();
-		System.out.println("the num of files is "+total);
-		System.out.println("the num of bug is "+numBug);
-		System.out.println("the ratio of bug is "+(double)numBug/total);
+		System.out.println("the num of files is " + total);
+		System.out.println("the num of bug is " + numBug);
+		System.out.println("the ratio of bug is " + (double) numBug / total);
 	}
 
 	/**
@@ -318,43 +280,31 @@ public final class Extraction2 extends Extraction {
 	}
 
 	/**
-	 * 获取contentMap,用于输出到csv文件.
+	 * 根据grid得到表格形式的contentMap.这里得到的数据是所有在metrics文件中出现的实例.
 	 * 
 	 * @return
 	 */
-	public Map<List<Integer>, StringBuffer> getContentMap() {
-		return contentMap;
-	}
-
-	/**
-	 * 根据grid得到表格形式的contentMap.
-	 * @return
-	 */
-	public Map<List<Integer>, StringBuffer> buildContentMap() {
-		contentMap = new HashMap<>();
-		id_commitId_fileIds = new ArrayList<>();
+	public void buildContentMap() {
+		contentMap = new LinkedHashMap<>();
+		commitId_fileIds = new ArrayList<>();
 		List<Integer> title = new ArrayList<>();
 		title.add(-1);
 		title.add(-1);
-		title.add(-1);
-		id_commitId_fileIds.add(title);
+		commitId_fileIds.add(title);
 		StringBuffer titleBuffer = new StringBuffer();
 		for (String attri : attributes) {
 			titleBuffer.append(attri + ",");
 		}
 		contentMap.put(title, titleBuffer);
-
-		int id = 1;
+		
 		for (String file : curFiles) {
 			int commit_id = Integer.parseInt(file.split("_")[0]);
 			int file_id = Integer.parseInt(file.substring(0, file.indexOf('.'))
 					.split("_")[1]);
 			List<Integer> cf = new ArrayList<>();
-			cf.add(id);
 			cf.add(commit_id);
 			cf.add(file_id);
-			id++;
-			id_commitId_fileIds.add(cf);
+			commitId_fileIds.add(cf);
 			StringBuffer temp = new StringBuffer();
 			for (String attri : attributes) {
 				if (grid.get(attri).containsKey(file)) {
@@ -365,11 +315,11 @@ public final class Extraction2 extends Extraction {
 			}
 			contentMap.put(cf, temp);
 		}
-		return contentMap;
 	}
 
 	/**
 	 * 将复杂度信息写入数据库,将消耗大量时间.
+	 * 
 	 * @throws SQLException
 	 */
 	@SuppressWarnings("unused")
@@ -438,37 +388,14 @@ public final class Extraction2 extends Extraction {
 		attributes.addAll(deltaArrSet);
 	}
 
-	/**
-	 * 显示当前数据库中的表有哪些
-	 * 
-	 * @throws SQLException
-	 */
-	public void Show() throws SQLException {
-		sql = "show tables";
-		resultSet = stmt.executeQuery(sql);
-		while (resultSet.next()) {
-			System.out.println(resultSet.getString(1));
+	@Override
+	public Map<List<Integer>, StringBuffer> getContentMap(
+			List<List<Integer>> someCommit_fileIds) throws SQLException {
+		Map<List<Integer>, StringBuffer> content=new LinkedHashMap<>();
+		for (List<Integer> list : someCommit_fileIds) {
+			content.put(list, contentMap.get(list));
 		}
-	}
-
-	/**
-	 * 提取extraction2中的id，commit_id，file_id，用于Merge中的merge12()场景。
-	 * 
-	 * @return extraction2中的id，commit_id，file_id的列表。
-	 * @throws SQLException
-	 */
-	public List<List<Integer>> GeticfFromDatabase() throws SQLException {
-		List<List<Integer>> res = new ArrayList<>();
-		sql = "select id,commit_id,file_id from extraction2";
-		resultSet = stmt.executeQuery(sql);
-		while (resultSet.next()) {
-			List<Integer> temp = new ArrayList<>();
-			temp.add(resultSet.getInt(1));
-			temp.add(resultSet.getInt(2));
-			temp.add(resultSet.getInt(3));
-			res.add(temp);
-		}
-		return res;
+		return content;
 	}
 
 }
