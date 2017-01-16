@@ -392,6 +392,10 @@ public final class Extraction2 extends Extraction {
 	public Map<List<Integer>, StringBuffer> getContentMap(
 			List<List<Integer>> someCommit_fileIds) throws SQLException {
 		Map<List<Integer>, StringBuffer> content=new LinkedHashMap<>();
+		List<Integer> title = new ArrayList<>();
+		title.add(-1);
+		title.add(-1);
+		content.put(title, contentMap.get(title));
 		for (List<Integer> list : someCommit_fileIds) {
 			content.put(list, contentMap.get(list));
 		}
