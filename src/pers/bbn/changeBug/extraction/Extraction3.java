@@ -9,12 +9,10 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
-import org.junit.FixMethodOrder;
 
 /**
  * 提取源码信息路径信息。
@@ -41,9 +39,7 @@ import org.junit.FixMethodOrder;
  *
  */
 public class Extraction3 extends Extraction {
-	List<List<Integer>> id_commitId_fileIds;
 	Map<String, String> dictionary;
-	Map<String, String> dictionary2;
 	Set<String> currStrings;
 	Map<List<Integer>, StringBuffer> content;
 	Map<String, Integer> colMap;
@@ -57,75 +53,32 @@ public class Extraction3 extends Extraction {
 	 * @param projectHome
 	 * @param startId
 	 * @param endId
-	 * @throws SQLException
-	 * @throws IOException
+	 * @throws Exception 
 	 */
 	//FIXME 由于setICFfromDatabase存在问题,本方法也有待改进.
 	public Extraction3(String database, String projectHome, int startId,
-			int endId) throws SQLException, IOException {
-		super(database);
-		id_commitId_fileIds = new ArrayList<>();
-		setICFfromDatabase(startId, endId);
+			int endId) throws Exception {
+		super(database,startId,endId);
+		//setICFfromDatabase(startId, endId);
 		dictionary = new HashMap<>();
-		dictionary2 = new HashMap<>();
 		currStrings = new HashSet<>();
-		content = new HashMap<>();
+		content = new LinkedHashMap<>();
 		colMap = new HashMap<>();
-
-		// 这里的startId和endId相对父类的有点乱。
+		headmap=new ArrayList<>();
+		headmap.add(-1);
+		headmap.add(-1);
+		content.put(headmap, new StringBuffer());
+		content.keySet().addAll(commit_fileIds);
+		
 		changeLogInfo();
 		sourceInfo(projectHome);
 		pathInfo();
-	}
-
-	public Extraction3(String database, List<List<Integer>> icf_id,
-			String projectHome) throws SQLException, IOException {
-		super(database);
-		setCommitId_fileIds(icf_id);
-		dictionary = new HashMap<>();
-		dictionary2 = new HashMap<>();
-		currStrings = new HashSet<>();
-		content = new HashMap<>();
-		colMap = new HashMap<>();
-		headmap = new ArrayList<>();
-		headmap.add(-1);
-		headmap.add(-1);
-		headmap.add(-1);
-		StringBuffer head = new StringBuffer("id,commit_id,file_id,");
-		content.put(headmap, head);
-		for (List<Integer> list : id_commitId_fileIds) {
-			if (list.get(0) != -1) {
-				StringBuffer write = new StringBuffer(list.get(0) + ","
-						+ list.get(1) + "," + list.get(2) + ",");
-				content.put(list, write);
-			}
-		}
-
-		// 这里的startId和endId相对父类的有点乱。
-		changeLogInfo();
-		sourceInfo(projectHome);
-		pathInfo();
-	}
-
-	/**
-	 * 初始化实例集的keyset，实际上由于extraction1中包含的信息远多与实际想要分析的，
-	 * 所以默认分析(start==-1||end==-1)时，应该以extraction2为基准分析。
-	 * 
-	 * @param start
-	 *            若为-1，则以extraction2中的所有项为基准得到最终实例，如果指定特殊值则表明以extraction2中的子集为基准
-	 * @param end
-	 *            若为-1，则以extraction2中的所有项为基准得到最终实例，如果指定特殊值则表明以extraction2中的子集为基准
-	 * @throws SQLException
-	 * @throws IOException
-	 */
-	public void initial(int start, int end) throws SQLException, IOException {
-
 	}
 
 	/**
 	 * 在content中针对指定的commit_id，更新属性s的值。
 	 * 此函数主要针对pathinfo和changelog，因为path信息或者changelog信息只与commit_id有关，与file_id无关。
-	 * 
+	 * 竟然是根据StringBuffer拆分的,效率太差了,应该用LinkedHashMap啊!
 	 * @param s
 	 *            属性名称。如果当前属性集中已有该属性，则对文件中每个实例更新该属性的值， 否则，向属性集中添加该属性，并初始化各属性值。
 	 * @param tent
@@ -143,13 +96,12 @@ public class Extraction3 extends Extraction {
 			currStrings.add(s);
 			String ColName = "s" + dictionary.size();
 			dictionary.put(s, ColName);
-			dictionary2.put(ColName, s);
-			colMap.put(ColName, colMap.size() + 3);
+			colMap.put(ColName, colMap.size());
 
 			for (List<Integer> list : tent.keySet()) {
 				if (list.get(0) == -1) {
 					tent.put(headmap, tent.get(headmap).append(ColName + ","));
-				} else if (list.get(1) == commitId) {
+				} else if (list.get(0) == commitId) {
 					tent.put(list, tent.get(list).append(value + ","));
 				} else {
 					tent.put(list, tent.get(list).append(0 + ","));
@@ -160,7 +112,7 @@ public class Extraction3 extends Extraction {
 			String column = dictionary.get(s);
 			int index = colMap.get(column);
 			for (List<Integer> list : tent.keySet()) {
-				if (list.get(1) == commitId) {
+				if (list.get(0) == commitId) {
 					StringBuffer newbuffer = new StringBuffer();
 					String[] arrayStrings = tent.get(list).toString()
 							.split(",");
@@ -189,16 +141,7 @@ public class Extraction3 extends Extraction {
 	 * @throws IOException
 	 */
 	public void changeLogInfo() throws SQLException, IOException {
-		// bow = new Bow();
-		// 获得所有不同的commit_id
-		Set<Integer> commit_ids = new LinkedHashSet<>();
-		for (List<Integer> list : id_commitId_fileIds) {
-			if (!commit_ids.contains(list.get(1))) {
-				commit_ids.add(list.get(1));
-			}
-		}
-		// 对每个commit_id，获取其changelog 信息，并加入content。
-		for (Integer commitId : commit_ids) {
+		for (Integer commitId : commitIdPart) {
 			if (commitId != -1) {
 				System.out.println(commitId);
 				sql = "select message from scmlog where id=" + commitId;
@@ -226,20 +169,18 @@ public class Extraction3 extends Extraction {
 	 * @throws IOException
 	 */
 	public void sourceInfo(String projectHome) throws SQLException, IOException {
-		for (List<Integer> list : id_commitId_fileIds) {
-			if (list.get(1) != -1) {
-				System.out.println("extract from " + list.get(1) + "_"
-						+ list.get(2) + ".java");
+		for (List<Integer> list : commit_fileIds) {
+				System.out.println("extract from " + list.get(0) + "_"
+						+ list.get(1) + ".java");
 
 				sql = "select patch from patches where commit_id="
-						+ list.get(1) + " and file_id=" + list.get(2);
-				// bow = new Bow();
-				// sql = "select patch from patches where id=2354";
+						+ list.get(0) + " and file_id=" + list.get(1);
+
 				resultSet = stmt.executeQuery(sql);
 				String patchString = "";
 				if (!resultSet.next()) {
-					System.out.println("patches in commit_id=" + list.get(1)
-							+ " and file_id" + list.get(2) + " is empty!");
+					System.out.println("patches in commit_id=" + list.get(0)
+							+ " and file_id" + list.get(1) + " is empty!");
 				} else {
 					patchString = resultSet.getString(1);
 				}
@@ -257,14 +198,14 @@ public class Extraction3 extends Extraction {
 					}
 				}
 
-				File sourceFile = new File(projectHome + "/" + list.get(1)
-						+ "_" + list.get(2) + ".java");
+				File sourceFile = new File(projectHome + "/" + list.get(0)
+						+ "_" + list.get(1) + ".java");
 				BufferedReader bReader;
 				try {
 					bReader = new BufferedReader(new FileReader(sourceFile));
 				} catch (FileNotFoundException e) {
-					System.out.println("Not find the file " + list.get(1) + "_"
-							+ list.get(2) + ".java");
+					System.out.println("Not find the file " + list.get(0) + "_"
+							+ list.get(1) + ".java");
 					continue;
 				}
 				String line;
@@ -275,10 +216,9 @@ public class Extraction3 extends Extraction {
 				Map<String, Integer> patch = Bow.bowP(sBuffer);
 
 				for (String s : patch.keySet()) {
-					content = writeInfo(s, content, list.get(1), list.get(2),
+					content = writeInfo(s, content, list.get(0), list.get(1),
 							patch.get(s));
 				}
-			}
 		}
 	}
 
@@ -302,19 +242,16 @@ public class Extraction3 extends Extraction {
 	public Map<List<Integer>, StringBuffer> writeInfo(String s,
 			Map<List<Integer>, StringBuffer> tent, int commitId, int fileId,
 			Integer value) {
-		// boolean IsNewField = false;
 		if (!currStrings.contains(s)) {
-			// IsNewField = true;
 			currStrings.add(s);
 			String ColName = "s" + dictionary.size();
 			dictionary.put(s, ColName);
-			dictionary2.put(ColName, s);
-			colMap.put(ColName, colMap.size() + 3);
+			colMap.put(ColName, colMap.size());
 
 			for (List<Integer> list : tent.keySet()) {
-				if (list.get(1) == -1) {
+				if (list.get(0) == -1) {
 					tent.get(headmap).append(ColName + ",");
-				} else if (list.get(1) == commitId && list.get(2) == fileId) {
+				} else if (list.get(0) == commitId && list.get(1) == fileId) {
 					tent.put(list, tent.get(list).append(value + ","));
 				} else {
 					tent.put(list, tent.get(list).append(0 + ","));
@@ -323,7 +260,7 @@ public class Extraction3 extends Extraction {
 		} else {
 			String column = dictionary.get(s);
 			for (List<Integer> list : tent.keySet()) {
-				if (list.get(1) == commitId && list.get(2) == fileId) {
+				if (list.get(0) == commitId && list.get(1) == fileId) {
 					int index = colMap.get(column);
 					StringBuffer newbuffer = new StringBuffer();
 					String[] aStrings = tent.get(list).toString().split(",");
@@ -349,9 +286,9 @@ public class Extraction3 extends Extraction {
 	 * @throws IOException
 	 */
 	public void pathInfo() throws SQLException, IOException {
-		for (List<Integer> list : id_commitId_fileIds) {
+		for (List<Integer> list : commit_fileIds) {
 			sql = "select current_file_path from actions where commit_id="
-					+ list.get(1) + " and file_id=" + list.get(2);
+					+ list.get(0) + " and file_id=" + list.get(1);
 			// bow = new Bow();
 			resultSet = stmt.executeQuery(sql);
 
@@ -361,98 +298,24 @@ public class Extraction3 extends Extraction {
 			String path = resultSet.getString(1);
 			Map<String, Integer> pathName = Bow.bowPP(path);
 			for (String s : pathName.keySet()) {
-				content = writeInfo(s, content, list.get(1), list.get(2), // 两个函数可以整合为一个
+				content = writeInfo(s, content, list.get(0), list.get(1), // 两个函数可以整合为一个
 						pathName.get(s));
 			}
 		}
 	}
-
-	/**
-	 * 获取表extraction3的主键.
-	 * 
-	 * @return
-	 */
-	public List<List<Integer>> getCommitId_fileIds() {
-		return id_commitId_fileIds;
-	}
-
-	/**
-	 * 根据数据库中的extraction2设置id_commitId_fileIds.很多情况下由于效率原因,根本就没有生成extraction2表,
-	 * 可以选择从extraction1表中生成,但目前来说extraction1表生成还有点问题,比如不该包含523_687选项.
-	 * 
-	 * @param start
-	 * @param end
-	 * @throws SQLException
-	 */
-	//FIXME
-	public void setICFfromDatabase(int start, int end) throws SQLException {
-		headmap = new ArrayList<>();
-		headmap.add(-1);
-		headmap.add(-1);
-		headmap.add(-1);
-		StringBuffer head = new StringBuffer("id,commit_id,file_id,");
-		id_commitId_fileIds.add(headmap);
-		content.put(headmap, head);
-
-		if (start == -1 || end == -1) {
-			sql = "select id,commit_id,file_id from extraction2";
-		} else {
-			sql = "select id,commit_id,file_id from extraction2 where id>="
-					+ start + " and id<" + end;
-		}
-
-		resultSet = stmt.executeQuery(sql);
-		while (resultSet.next()) {
-			List<Integer> temp = new ArrayList<>();
-			temp.add(resultSet.getInt(1));
-			temp.add(resultSet.getInt(2));
-			temp.add(resultSet.getInt(3));
-			id_commitId_fileIds.add(temp); // 记录id,commit_id和file_id以备后用。
-			StringBuffer write = new StringBuffer(resultSet.getInt(1) + ","
-					+ resultSet.getInt(2) + "," + resultSet.getInt(3) + ",");
-			content.put(temp, write);
-		}
-
-	}
-
-	/**
-	 * 根据给定的参数设置表extraction3的主键.
-	 * 
-	 * @param commitId_fileIds
-	 */
-	public void setCommitId_fileIds(List<List<Integer>> commitId_fileIds) {
-		this.id_commitId_fileIds = commitId_fileIds;
-	}
-
-	/**
-	 * 获取extraction3的内容.
-	 * 
-	 * @return
-	 */
-	public Map<List<Integer>, StringBuffer> getContent() {
-		for (List<Integer> key : content.keySet()) {
-			StringBuffer temp = content.get(key);
-			content.put(key,
-					new StringBuffer(temp.subSequence(0, temp.length() - 1)));
-		}
-		return content;
-	}
-
-	/**
-	 * 设置表extraction3的内容.
-	 * 
-	 * @param content
-	 */
-	public void setContent(Map<List<Integer>, StringBuffer> content) {
-		this.content = content;
-	}
-
+	
 	/**
 	 * 获取文本解析后的字典.
 	 * 
 	 * @return
 	 */
 	public Map<String, String> getDictionary() {
-		return dictionary2;
+		return dictionary;
+	}
+
+	@Override
+	public Map<List<Integer>, StringBuffer> getContentMap(
+			List<List<Integer>> someCommit_fileIds) throws SQLException {
+		return content;
 	}
 }
