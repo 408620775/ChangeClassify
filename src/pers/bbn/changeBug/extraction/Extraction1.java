@@ -518,6 +518,7 @@ public final class Extraction1 extends Extraction {
 	 * Assurance,增加分类实例的diffusion(传播)属性.包括NS,ND,NF和Entropy四类.
 	 * 具体信息可参考论文中的定义.起始根据其实现,感觉此函数是针对commitId的,而非(commitId,fileId)对.
 	 * 此函数如果执行所有实例,那么它还依赖changed_LOC是否执行了所有函数.
+	 * 
 	 * @throws SQLException
 	 */
 	public void diffusion(boolean excuteAll) throws SQLException {
@@ -533,15 +534,15 @@ public final class Extraction1 extends Extraction {
 			curAttributes.add("nf");
 			curAttributes.add("entropy");
 		}
-		
-		List<List<Integer>> executeList=null;
-		if (excuteAll==true) {
+
+		List<List<Integer>> executeList = null;
+		if (excuteAll == true) {
 			if (commit_file_inExtracion1 == null) {
 				obtainCFidInExtraction1();
 			}
-			executeList=commit_file_inExtracion1;
-		}else {
-			executeList=commit_fileIds;
+			executeList = commit_file_inExtracion1;
+		} else {
+			executeList = commit_fileIds;
 		}
 
 		for (List<Integer> commit_fileId : executeList) {
@@ -596,6 +597,7 @@ public final class Extraction1 extends Extraction {
 	 * ,包括la,ld,lt三类.但似乎这三类属性跟之前的属性或者extraction2中的一些属性重合度很高.
 	 * 值得注意的是,这个函数写的太烂了,跟之前的changed_LOC重合太多,但是由于创建这两个函数的时间维度不同,暂时保持这样.
 	 * 执行的部分依赖于之前sloc执行的部分.
+	 * 
 	 * @throws SQLException
 	 */
 	public void size(boolean excuteAll) throws SQLException {
@@ -611,16 +613,16 @@ public final class Extraction1 extends Extraction {
 			curAttributes.add("lt");
 		}
 
-		List<List<Integer>> executeList=null;
-		if (excuteAll==true) {
+		List<List<Integer>> executeList = null;
+		if (excuteAll == true) {
 			if (commit_file_inExtracion1 == null) {
 				obtainCFidInExtraction1();
 			}
-			executeList=commit_file_inExtracion1;
-		}else {
-			executeList=commit_fileIds;
+			executeList = commit_file_inExtracion1;
+		} else {
+			executeList = commit_fileIds;
 		}
-		
+
 		List<List<Integer>> re = new ArrayList<>();
 		for (List<Integer> list : executeList) {
 			sql = "select id,file_id from extraction1 where commit_id="
@@ -715,14 +717,14 @@ public final class Extraction1 extends Extraction {
 			stmt.executeUpdate(sql);
 			curAttributes.add("fix");
 		}
-		List<List<Integer>> executeList=null;
-		if (excuteAll==true) {
+		List<List<Integer>> executeList = null;
+		if (excuteAll == true) {
 			if (commit_file_inExtracion1 == null) {
 				obtainCFidInExtraction1();
 			}
-			executeList=commit_file_inExtracion1;
-		}else {
-			executeList=commit_fileIds;
+			executeList = commit_file_inExtracion1;
+		} else {
+			executeList = commit_fileIds;
 		}
 
 		for (List<Integer> list : executeList) {
@@ -735,6 +737,7 @@ public final class Extraction1 extends Extraction {
 	/**
 	 * 根据git log信息来update实例的history信息,相比history1更加准确,但是时间也相对会长一些.
 	 * 由于时间复杂度相对较高,只提取指定范围内的history信息,不提取总体的信息.
+	 * 
 	 * @throws IOException
 	 * @throws InterruptedException
 	 */
@@ -794,6 +797,7 @@ public final class Extraction1 extends Extraction {
 	/**
 	 * 针对给定的commitId,fileId对,update其在extraction1表中的history属性.
 	 * 实现已经在history.py中实现了,其上层函数history1已经暂时废弃.
+	 * 
 	 * @param curCommitId
 	 * @param curFileId
 	 * @throws SQLException
@@ -839,8 +843,8 @@ public final class Extraction1 extends Extraction {
 	}
 
 	/**
-	 * 获取文件的上一次change.
-	 * 也在history.py中实现了,目前没有用了.
+	 * 获取文件的上一次change. 也在history.py中实现了,目前没有用了.
+	 * 
 	 * @param curCommitId
 	 * @param curFileId
 	 * @return 上一次修改的commit_id.
@@ -984,8 +988,8 @@ public final class Extraction1 extends Extraction {
 
 	/**
 	 * 根据论文A Large-Scale Empirical Study Of Just-in-Time Quality
-	 * Assurance,增加分类实例的作者经验信息,包括EXP,REXP,SEXP三部分,具体含义见论文.
-	 * 已在history.py中实现,暂时废弃.
+	 * Assurance,增加分类实例的作者经验信息,包括EXP,REXP,SEXP三部分,具体含义见论文. 已在history.py中实现,暂时废弃.
+	 * 
 	 * @throws SQLException
 	 */
 	@SuppressWarnings("unused")
@@ -1019,7 +1023,7 @@ public final class Extraction1 extends Extraction {
 	 * @param integer2
 	 * @throws SQLException
 	 */
-	//其上层函数已经被废弃,暂时没用了.好像还有点问题这个函数.
+	// 其上层函数已经被废弃,暂时没用了.好像还有点问题这个函数.
 	private void updateExperience(int commitId, int fileId) throws SQLException {
 		int firstAppearCommitId = getFirstAppearOfFile(commitId, fileId).get(0);
 		List<String> timeRange = getTimeRangeBetweenTwoCommit(
@@ -1116,8 +1120,8 @@ public final class Extraction1 extends Extraction {
 	}
 
 	/**
-	 * 根据数据库中的commit_date的字符串,获取commit_date的年份.
-	 * 已在history.py中实现.暂时没用了.
+	 * 根据数据库中的commit_date的字符串,获取commit_date的年份. 已在history.py中实现.暂时没用了.
+	 * 
 	 * @param string
 	 * @return
 	 */
@@ -1129,26 +1133,28 @@ public final class Extraction1 extends Extraction {
 	public Map<List<Integer>, StringBuffer> getContentMap(
 			List<List<Integer>> someCommit_fileIds) throws SQLException {
 		Map<List<Integer>, StringBuffer> content = new LinkedHashMap<>();
+		List<Integer> title = new ArrayList<>();
+		title.add(-1);
+		title.add(-1);
+		StringBuffer titleBuffer = new StringBuffer();
+		sql = "select * from extraction1 where id=1";
+		resultSet = stmt.executeQuery(sql);
+		int colcount = resultSet.getMetaData().getColumnCount();
+		for (int i = 4; i <= colcount; i++) {
+			titleBuffer.append(resultSet.getMetaData().getColumnName(i) + ",");
+		}
+		content.put(title, titleBuffer);
+
 		for (List<Integer> commit_fileId : someCommit_fileIds) {
 			StringBuffer temp = new StringBuffer();
-			if (commit_fileId.get(0) == -1) {
-				sql = "select * from extraction1 where id=1";
-				resultSet = stmt.executeQuery(sql);
-				int colcount = resultSet.getMetaData().getColumnCount();
-				for (int i = 4; i <= colcount; i++) {
-					temp.append(resultSet.getMetaData().getColumnName(i) + ",");
-				}
-			} else {
-				sql = "select * from extraction1 where commit_id="
-						+ commit_fileId.get(0) + " and file_id="
-						+ commit_fileId.get(1);
-				resultSet = stmt.executeQuery(sql);
-				int colCount = resultSet.getMetaData().getColumnCount();
-				resultSet.next();
-				for (int i = 4; i <= colCount; i++) {
-					temp.append(resultSet.getString(i) + ",");
-				}
-
+			sql = "select * from extraction1 where commit_id="
+					+ commit_fileId.get(0) + " and file_id="
+					+ commit_fileId.get(1);
+			resultSet = stmt.executeQuery(sql);
+			int colCount = resultSet.getMetaData().getColumnCount();
+			resultSet.next();
+			for (int i = 4; i <= colCount; i++) {
+				temp.append(resultSet.getString(i) + ",");
 			}
 			content.put(commit_fileId, temp);
 		}
