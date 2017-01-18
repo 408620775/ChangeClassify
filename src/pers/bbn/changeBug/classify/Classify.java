@@ -182,7 +182,7 @@ public class Classify {
 	public void Evaluation10(int choose) throws Exception {
 		res = new ArrayList<>();
 		eval = new MyEvaluation(ins, choose);
-		eval.crossValidateModel(cla, ins, 10, new Random());
+		eval.crossValidateModel(cla, ins, 10, new Random(10));
 		res.add(eval.recall(0));
 		res.add(eval.recall(1));
 		res.add(eval.precision(0));
