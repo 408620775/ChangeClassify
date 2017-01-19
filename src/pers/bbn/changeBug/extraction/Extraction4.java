@@ -8,7 +8,6 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -21,73 +20,88 @@ import jxl.Sheet;
 import jxl.Workbook;
 import jxl.read.biff.BiffException;
 
+/**
+ * 提取源码的图属性.
+ * 
+ * @author nbb
+ * @param attrsTitle
+ *            所有图属性组成的StingBuffer.
+ * @param uselessAttriId
+ *            不用的属性的id.
+ * @param projectName
+ *            工程名称.
+ *
+ */
 public class Extraction4 extends Extraction {
 	static StringBuffer attrsTitle;
 	static Set<Integer> uselessAttriId;
 	static String projectName;
-	static int start;
-	static int end;
+	static Map<List<Integer>, StringBuffer> contentMap;
+
+	/**
+	 * 构造函数,提取指定工程指定阶段内的文件的图属性.
+	 * 
+	 * @param database
+	 *            工程对应的数据库
+	 * @param s
+	 *            阶段的起始commit_id(时间序)
+	 * @param e
+	 *            阶段的结束commit_id(时间序)
+	 * @throws Exception
+	 */
 	public Extraction4(String database, int s, int e) throws Exception {
-		super(database);
+		super(database, s, e);
+		contentMap = new LinkedHashMap<>();
 	}
 
+	/**
+	 * 为了获取源文件(使用git获得),打印相关的信息.
+	 * 
+	 * @param outFile
+	 * @throws SQLException
+	 * @throws IOException
+	 */
 	public void printRevInfo(String outFile) throws SQLException, IOException {
-		int idsInEx1 = 0;
-		int finds = start-1;
-		while (idsInEx1 == 0) {
-			sql = "select min(id) from extraction1 where commit_id="
-					+ commit_ids.get(finds);
-			resultSet = stmt.executeQuery(sql);
-			while (resultSet.next()) {
-				idsInEx1 = resultSet.getInt(1);
-			}
-			if (idsInEx1 == 0) {
-				finds++; // warning: change the value of start
-			}
-		}
-		int ideInEx1 = 0;
-		int finde = end - 1;
-		while (ideInEx1 == 0) {
-			sql = "select max(id) from extraction1 where commit_id="
-					+ commit_ids.get(finde);
-			resultSet = stmt.executeQuery(sql);
-			while (resultSet.next()) {
-				ideInEx1 = resultSet.getInt(1);
-			}
-			if (ideInEx1 == 0) {
-				finde--; // warning: change the value of start
-			}
-		}
-
-		sql = "select extraction1.commit_id,extraction1.file_id,current_file_path,rev from extraction1,actions,scmlog "
-				+ "where extraction1.id>="
-				+ idsInEx1
-				+ " and extraction1.id<="
-				+ ideInEx1
-				+ " and extraction1.commit_id=actions.commit_id and extraction1.file_id=actions.file_id and type!='D' and extraction1.commit_id=scmlog.id";
-		resultSet = stmt.executeQuery(sql);
 		StringBuffer sBuffer = new StringBuffer();
-		String line = null;
-		while (resultSet.next()) {
-			line = resultSet.getInt(1) + "   " + resultSet.getInt(2) + "   "
-					+ resultSet.getString(3) + "   " + resultSet.getString(4)
-					+ "\n";
-			sBuffer.append(line);
+		for (List<Integer> list : commit_fileIds) {
+			sql = "select extraction1.commit_id,extraction1.file_id,current_file_path,rev from extraction1,actions,scmlog "
+					+ "where extraction1.commit_id="
+					+ list.get(0)
+					+ " and extraction1.file_id="
+					+ list.get(1)
+					+ " and extraction1.commit_id=actions.commit_id and extraction1.file_id=actions.file_id and extraction1.commit_id=scmlog.id";
+			resultSet = stmt.executeQuery(sql);
+			String line = null;
+			while (resultSet.next()) {
+				line = resultSet.getInt(1) + "   " + resultSet.getInt(2)
+						+ "   " + resultSet.getString(3) + "   "
+						+ resultSet.getString(4) + "\n";
+				sBuffer.append(line);
+			}
 		}
-
 		FileOperation.writeStringBuffer(sBuffer, outFile);
 	}
 
-	public static StringBuffer getGraphAttrCsv(String infoFile, String folder,String absoFilter)
-			throws IOException, BiffException {
+	/**
+	 * 获取构造函数指定范围内的图属性的StringBuffer.
+	 * 
+	 * @param infoFile
+	 *            包含commit_id,file_id,rev,current_file_path的info文件
+	 * @param folder
+	 * @param absoFilter
+	 * @return
+	 * @throws IOException
+	 * @throws BiffException
+	 */
+	public static void extracGraphAttr(String infoFile, String folder,
+			String absoFilter) throws IOException, BiffException {
 		int[] useless = { 0, 3, 5, 6, 8, 10, 12, 14, 17, 22, 23, 24, 25, 26, 39 };
 		uselessAttriId = new HashSet<>();
 		for (int integer : useless) {
 			uselessAttriId.add(integer);
 		}
 		Map<String, List<String>> infoMap = readInfoMap(infoFile);
-		StringBuffer res = mergeRecord(folder, infoMap,absoFilter);
-		return res;
+	    getRecord(folder, infoMap, absoFilter);
 	}
 
 	/**
@@ -97,7 +111,8 @@ public class Extraction4 extends Extraction {
 	 * @throws IOException
 	 */
 	public void covert(String filename) throws IOException {
-		BufferedReader bReader = new BufferedReader(new FileReader(new File(filename)));
+		BufferedReader bReader = new BufferedReader(new FileReader(new File(
+				filename)));
 		bReader.readLine();
 		StringBuffer PoP = new StringBuffer();
 		Set<String> files = new HashSet<>();
@@ -112,7 +127,7 @@ public class Extraction4 extends Extraction {
 		System.out.println(files.size());
 		StringBuffer tile = new StringBuffer();
 		tile.append("DL n=" + files.size() + "\n");
-		tile.append("format = nodelist1" + "\n");
+		tile.append("format = edgelist1" + "\n");
 		tile.append("labels embedded:" + "\n");
 		tile.append("data:" + "\n");
 		tile.append(PoP);
@@ -126,7 +141,7 @@ public class Extraction4 extends Extraction {
 
 	/**
 	 * 根据信息文件获取文件基本信息，并将这些信息存储到map中。其中key值为commit_id，values为list，
-	 * list中的元素为该commit_id下需要度量图属性的文件的名称。
+	 * list中的元素为该commit_id下需要度量图属性的文件的id和路径。
 	 * 
 	 * @param infoFilename
 	 * @throws IOException
@@ -166,10 +181,10 @@ public class Extraction4 extends Extraction {
 	 * @throws IOException
 	 * @throws BiffException
 	 */
-	public static StringBuffer getRecordForSpeciaC(String flod, String versionNum,
-			List<String> filenames,int len) {
-		StringBuffer res = new StringBuffer();
-		File versionFile = new File(flod + "//"+projectName + versionNum + "R.xls");
+	public static void getRecordForSpeciaC(String flod, String versionNum,
+			List<String> filenames, int len) {
+		File versionFile = new File(flod + "//" + projectName + versionNum
+				+ "R.xls");
 		Workbook workbook;
 		System.out.println("versionNum:" + versionNum);
 		try {
@@ -177,30 +192,41 @@ public class Extraction4 extends Extraction {
 			Sheet sheet = workbook.getSheet(0);
 			if (attrsTitle == null) {
 				StringBuffer temp = getRecordForSpeciaCF("ID", sheet);
+				List<Integer> title = new ArrayList<>();
+				title.add(-1);
+				title.add(-1);
+				contentMap.put(title, temp);
 				attrsTitle = new StringBuffer();
 				attrsTitle.append("commit_id,file_id,").append(temp);
-				res.append(attrsTitle + "\n");
 			}
 			for (String string : filenames) {
 				string = string.replace("/", "\\");
 				String name = string.split(",")[1].substring(len);
 				String file_id = string.split(",")[0];
 				StringBuffer temp = getRecordForSpeciaCF(name, sheet);
-				res.append(versionNum + "," + file_id + "," + temp + "\n");
-
+				List<Integer> key = new ArrayList<>();
+				key.add(Integer.parseInt(versionNum));
+				key.add(Integer.parseInt(file_id));
+				contentMap.put(key, temp);
 			}
 		} catch (BiffException e) {
 			e.printStackTrace();
 		} catch (IOException e) {
-			System.out.println("Can't find flod " + "//"+projectName + versionNum
-					+ "R.xls");
+			System.out.println("Can't find flod " + "//" + projectName
+					+ versionNum + "R.xls");
 			e.printStackTrace();
 		}
-
-		return res;
 	}
 
-	private static StringBuffer getRecordForSpeciaCF(String filename, Sheet sheet) {
+	/**
+	 * 针对指定的commit_id和文件名,获取该文件名对应的图属性,以StringBuffer的形式将其返回.
+	 * 
+	 * @param filename
+	 * @param sheet
+	 * @return
+	 */
+	private static StringBuffer getRecordForSpeciaCF(String filename,
+			Sheet sheet) {
 		StringBuffer res = new StringBuffer();
 		Cell test = sheet.findCell(filename);
 		try {
@@ -227,26 +253,36 @@ public class Extraction4 extends Extraction {
 		if (res.length() > 1) {
 			res.delete(res.length() - 1, res.length());
 		} else {
-			int fills=sheet.getColumns()-uselessAttriId.size();
-			for (int i = 0; i <fills; i++) {
+			int fills = sheet.getColumns() - uselessAttriId.size();
+			for (int i = 0; i < fills; i++) {
 				res.append("0,");
 			}
-			res.delete(res.length()-1, res.length());
+			res.delete(res.length() - 1, res.length());
 			System.out.println("contain expection point! Fill 0 automaticly!");
 		}
 
 		return res;
 	}
 
-	public static StringBuffer mergeRecord(String flod,
-			Map<String, List<String>> infoMap,String filter) throws BiffException,
-			IOException {
-		StringBuffer res = new StringBuffer();
+	/**
+	 * 针对指定的commit_id,以StringBuffer的形式返回其图属性结果.
+	 * 
+	 * @param flod
+	 *            包含图属性的文件夹
+	 * @param infoMap
+	 *            包含rev,current_file_path等信息的文件.
+	 * @param filter
+	 *            由于从understand导出的问题,文件的路径存在绝对和相对的问题.
+	 * @return 图属性组成的StringBuffer
+	 * @throws BiffException
+	 * @throws IOException
+	 */
+	public static void getRecord(String flod,
+			Map<String, List<String>> infoMap, String filter)
+			throws BiffException, IOException {
 		for (String key : infoMap.keySet()) {
-			StringBuffer temp = getRecordForSpeciaC(flod, key, infoMap.get(key),filter.length());
-			res.append(temp);
+			getRecordForSpeciaC(flod, key, infoMap.get(key), filter.length());
 		}
-		return res;
 	}
 
 	public static StringBuffer mergeGraphAttrToTotalAttr(String totalAttr,
@@ -281,7 +317,7 @@ public class Extraction4 extends Extraction {
 		StringBuffer title2 = new StringBuffer(line);
 		title2.delete(0, title2.indexOf(",") + 1);
 		title2.delete(0, title2.indexOf(",") + 1);
-		//System.out.println(title2);
+		// System.out.println(title2);
 		int count = 0;
 
 		while ((line = bReader.readLine()) != null) {
@@ -314,18 +350,34 @@ public class Extraction4 extends Extraction {
 		}
 		return res;
 	}
-	
+
 	public static void main(String[] args) throws Exception {
 		Extraction4 covert = new Extraction4("MyCamel", 2501, 2800);
 		covert.printRevInfo("CamelInfo");
-		
-		Extraction4.projectName="iTextpdf";
-		StringBuffer sBuffer=Extraction4.getGraphAttrCsv("E:\\GraphAttri\\iTextpdf\\ItextpdfInfo",
-		"E:\\GraphAttri\\iTextpdf\\uciTextpdf","itext/src/com/lowagie/");
-		FileOperation.writeStringBuffer(sBuffer, "iTextpdfGraph.csv");
+
+		Extraction4.projectName = "iTextpdf";
+/*		StringBuffer sBuffer = Extraction4.getGraphAttrCsv(
+				"E:\\GraphAttri\\iTextpdf\\ItextpdfInfo",
+				"E:\\GraphAttri\\iTextpdf\\uciTextpdf",
+				"itext/src/com/lowagie/");
+		FileOperation.writeStringBuffer(sBuffer, "iTextpdfGraph.csv");*/
 		StringBuffer sv = mergeGraphAttrToTotalAttr("MyItextpdf.csv",
 				"iTextpdfGraph.csv");
 		FileOperation.writeStringBuffer(sv, "iTextpdfCurRes.csv");
+	}
+
+	@Override
+	public Map<List<Integer>, StringBuffer> getContentMap(
+			List<List<Integer>> someCommit_fileIds) throws SQLException {
+		Map<List<Integer>, StringBuffer> content=new LinkedHashMap<>();
+		List<Integer> title = new ArrayList<>();
+		title.add(-1);
+		title.add(-1);
+		content.put(title, contentMap.get(title));
+		for (List<Integer> list : someCommit_fileIds) {
+			content.put(list, contentMap.get(list));
+		}
+		return content;
 	}
 
 }
