@@ -8,8 +8,9 @@ import getopt
 
 class extraction1:
 	#定义构造方法  
-	def __init__(self,database,startNum,endNum):          
-		self.conn = MySQLdb.connect (host = "localhost", port=3306,user = "root", passwd = "password",db=database)
+	def __init__(self,database,startNum,endNum):
+      		(username,password)=self.readDatabaseConfig()
+		self.conn = MySQLdb.connect (host = "localhost", port=3306,user = username, passwd = password,db=database)
 		self.cursor = self.conn.cursor()
 		self.curAttributes=set()					
 		self.cursor.execute("select id from scmlog order by commit_date")
@@ -20,7 +21,20 @@ class extraction1:
 		for content in row[startNum-1:endNum]:
 			self.commit_ids.append(int(content[0]))
 		#print commit_ids,len(commit_ids)
-		
+
+	def readDatabaseConfig(self):
+		config=open('database.properties')
+		username=''
+		password=''
+		line=config.readline()
+		while line:
+			if line.startswith("UserName"):
+				username=line.split('=')[1].strip('\n')
+			elif line.startswith('Password'):
+				password=line.split('=')[1].strip('\n')
+			line=config.readline()
+		return username,password
+
 	def history(self,gitProject):
 		self.cursor.execute("desc extraction1")
  		row=self.cursor.fetchall()
@@ -121,6 +135,8 @@ class extraction1:
 					if lastDateTime==0:
 						lastDateTime=lastDateTimeCur
 					key=(curDateTime-lastDateTimeCur).days/365
+					if key==-1:
+						key=0
 					if rexp.has_key(key+1):
 						rexp[key+1]=rexp[key+1]+1
 					else:
@@ -190,5 +206,5 @@ if __name__=='__main__':
 	argv=sys.argv[1:]
 	execute(argv,short_opts, long_opts)
 	tmpFile='tmp.txt'
-	#if os.path.exists(tmpFile):
-		#os.remove(tmpFile)
+	if os.path.exists(tmpFile):
+		os.remove(tmpFile)
