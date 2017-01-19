@@ -1,6 +1,4 @@
 package pers.bbn.changeBug.extraction;
-
-import java.util.Date;
 import java.util.List;
 /**
  * 工具类,用于处理一些简单的数学运算,禁止实例化.
