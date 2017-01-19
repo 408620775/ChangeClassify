@@ -52,15 +52,15 @@ public class Main {
 		String metric = database + "Metrics.txt";
 		extraction2.extraFromTxt(metric);
 
-		Extraction3 extraction3 = new Extraction3(database,
-				extraction2.getId_commitId_fileIds(), project + "Files");
-		fileOperation = new FileOperation();
-		Merge merge = new Merge(extraction3.getContent(),
-				extraction2.getContentMap(),
-				extraction2.getId_commitId_fileIds(), database);
-		fileOperation.writeContent(merge.merge123(), database + ".csv");
-		fileOperation.writeDict(database + "Dict.txt",
-				extraction3.getDictionary());
+//		Extraction3 extraction3 = new Extraction3(database,
+//				extraction2.getId_commitId_fileIds(), project + "Files");
+//		fileOperation = new FileOperation();
+//		Merge merge = new Merge(extraction3.getContent(),
+//				extraction2.getContentMap(),
+//				extraction2.getId_commitId_fileIds(), database);
+//		fileOperation.writeContent(merge.merge123(), database + ".csv");
+//		fileOperation.writeDict(database + "Dict.txt",
+//				extraction3.getDictionary());
 	}
 
 }
