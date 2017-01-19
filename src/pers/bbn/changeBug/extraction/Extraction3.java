@@ -41,7 +41,7 @@ import java.util.Set;
 public class Extraction3 extends Extraction {
 	Map<String, String> dictionary;
 	Set<String> currStrings;
-	Map<List<Integer>, StringBuffer> content;
+	Map<List<Integer>, StringBuffer> contentMap;
 	Map<String, Integer> colMap;
 	List<Integer> headmap;
 
@@ -62,13 +62,13 @@ public class Extraction3 extends Extraction {
 		//setICFfromDatabase(startId, endId);
 		dictionary = new HashMap<>();
 		currStrings = new HashSet<>();
-		content = new LinkedHashMap<>();
+		contentMap = new LinkedHashMap<>();
 		colMap = new HashMap<>();
 		headmap=new ArrayList<>();
 		headmap.add(-1);
 		headmap.add(-1);
-		content.put(headmap, new StringBuffer());
-		content.keySet().addAll(commit_fileIds);
+		contentMap.put(headmap, new StringBuffer());
+		contentMap.keySet().addAll(commit_fileIds);
 		
 		changeLogInfo();
 		sourceInfo(projectHome);
@@ -150,7 +150,7 @@ public class Extraction3 extends Extraction {
 				String message = resultSet.getString(1);
 				Map<String, Integer> bp = Bow.bow(message);
 				for (String s : bp.keySet()) {
-					content = writeInfo(s, content, commitId, bp.get(s));
+					contentMap = writeInfo(s, contentMap, commitId, bp.get(s));
 				}
 			}
 		}
@@ -216,7 +216,7 @@ public class Extraction3 extends Extraction {
 				Map<String, Integer> patch = Bow.bowP(sBuffer);
 
 				for (String s : patch.keySet()) {
-					content = writeInfo(s, content, list.get(0), list.get(1),
+					contentMap = writeInfo(s, contentMap, list.get(0), list.get(1),
 							patch.get(s));
 				}
 		}
@@ -298,7 +298,7 @@ public class Extraction3 extends Extraction {
 			String path = resultSet.getString(1);
 			Map<String, Integer> pathName = Bow.bowPP(path);
 			for (String s : pathName.keySet()) {
-				content = writeInfo(s, content, list.get(0), list.get(1), // 两个函数可以整合为一个
+				contentMap = writeInfo(s, contentMap, list.get(0), list.get(1), // 两个函数可以整合为一个
 						pathName.get(s));
 			}
 		}
@@ -316,6 +316,14 @@ public class Extraction3 extends Extraction {
 	@Override
 	public Map<List<Integer>, StringBuffer> getContentMap(
 			List<List<Integer>> someCommit_fileIds) throws SQLException {
+		Map<List<Integer>, StringBuffer> content=new LinkedHashMap<>();
+		List<Integer> title = new ArrayList<>();
+		title.add(-1);
+		title.add(-1);
+		content.put(title, contentMap.get(title));
+		for (List<Integer> list : someCommit_fileIds) {
+			content.put(list, contentMap.get(list));
+		}
 		return content;
 	}
 }
