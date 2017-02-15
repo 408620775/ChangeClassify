@@ -389,15 +389,21 @@ public final class Extraction2 extends Extraction {
 	}
 
 	@Override
-	public Map<List<Integer>, StringBuffer> getContentMap(
+	public Map<List<Integer>, String> getContentMap(
 			List<List<Integer>> someCommit_fileIds) throws SQLException {
-		Map<List<Integer>, StringBuffer> content=new LinkedHashMap<>();
+		if (contentMap==null) {
+			System.out.println("you need to run extraFromTxt first!");
+			return null;
+		}
+		Map<List<Integer>, String> content=new LinkedHashMap<>();
 		List<Integer> title = new ArrayList<>();
 		title.add(-1);
 		title.add(-1);
-		content.put(title, contentMap.get(title));
+		int titleLen=contentMap.get(title).length();
+		content.put(title, contentMap.get(title).substring(0, titleLen-1));
 		for (List<Integer> list : someCommit_fileIds) {
-			content.put(list, contentMap.get(list));
+			int len=contentMap.get(list).length();
+			content.put(list, contentMap.get(list).substring(0, len-1));
 		}
 		return content;
 	}

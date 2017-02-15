@@ -107,7 +107,7 @@ public abstract class Extraction {
 	 * @return
 	 * @throws SQLException
 	 */
-	public abstract Map<List<Integer>, StringBuffer> getContentMap(
+	public abstract Map<List<Integer>, String> getContentMap(
 			List<List<Integer>> someCommit_fileIds) throws SQLException;
 
 }

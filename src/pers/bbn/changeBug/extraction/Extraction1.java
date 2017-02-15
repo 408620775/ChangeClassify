@@ -1130,9 +1130,9 @@ public final class Extraction1 extends Extraction {
 	}
 
 	@Override
-	public Map<List<Integer>, StringBuffer> getContentMap(
+	public Map<List<Integer>, String> getContentMap(
 			List<List<Integer>> someCommit_fileIds) throws SQLException {
-		Map<List<Integer>, StringBuffer> content = new LinkedHashMap<>();
+		Map<List<Integer>, String> content = new LinkedHashMap<>();
 		List<Integer> title = new ArrayList<>();
 		title.add(-1);
 		title.add(-1);
@@ -1140,10 +1140,11 @@ public final class Extraction1 extends Extraction {
 		sql = "select * from extraction1 where id=1";
 		resultSet = stmt.executeQuery(sql);
 		int colcount = resultSet.getMetaData().getColumnCount();
-		for (int i = 4; i <= colcount; i++) {
+		for (int i = 4; i < colcount; i++) {
 			titleBuffer.append(resultSet.getMetaData().getColumnName(i) + ",");
 		}
-		content.put(title, titleBuffer);
+		titleBuffer.append(resultSet.getMetaData().getColumnName(colcount));
+		content.put(title, titleBuffer.toString());
 
 		for (List<Integer> commit_fileId : someCommit_fileIds) {
 			StringBuffer temp = new StringBuffer();
@@ -1153,10 +1154,11 @@ public final class Extraction1 extends Extraction {
 			resultSet = stmt.executeQuery(sql);
 			int colCount = resultSet.getMetaData().getColumnCount();
 			resultSet.next();
-			for (int i = 4; i <= colCount; i++) {
+			for (int i = 4; i < colCount; i++) {
 				temp.append(resultSet.getString(i) + ",");
 			}
-			content.put(commit_fileId, temp);
+			temp.append(resultSet.getString(colcount));
+			content.put(commit_fileId, temp.toString());
 		}
 		return content;
 	}
