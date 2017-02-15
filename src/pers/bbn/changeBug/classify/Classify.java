@@ -3,7 +3,6 @@ package pers.bbn.changeBug.classify;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
-
 import weka.classifiers.Classifier;
 import weka.classifiers.Evaluation;
 import weka.core.Instances;
@@ -23,6 +22,7 @@ public class Classify {
 
 	/**
 	 * 查看当前所用评估对象.
+	 * 
 	 * @return 当前的评估对象.
 	 */
 	public Evaluation getEval() {
@@ -31,11 +31,13 @@ public class Classify {
 
 	/**
 	 * 设置评估结果时使用的评估对象.
+	 * 
 	 * @param eval
 	 */
 	public void setEval(Evaluation eval) {
 		this.eval = eval;
 	}
+
 	/**
 	 * 查看当前类属性名称
 	 * 
@@ -61,7 +63,7 @@ public class Classify {
 	 * @return 模型评估结果
 	 */
 	public List<Double> getRes() {
-		//return res;
+		// return res;
 		List<Double> result = null;
 		try {
 			result = new ArrayList<Double>(res);
@@ -141,29 +143,17 @@ public class Classify {
 	/**
 	 * 執行10*10折交叉验证.eval的实现扩展性差,但就目前来说是相对比较好的折衷.
 	 * 
-	 * @param choose 
+	 * @param choose
 	 * @throws Exception
 	 */
 	void Evaluation100(int choose) throws Exception {
-		res = new ArrayList<>();
-		
 		List<List<Double>> TenRes = new ArrayList<>();
 		for (int i = 0; i < 10; i++) {
-			eval = new MyEvaluation(ins,choose);
-			eval.crossValidateModel(cla, ins, 10, new Random(i));
-			List<Double> tempResult = new ArrayList<>();
-			tempResult.add(eval.recall(0));
-			tempResult.add(eval.recall(1));
-			tempResult.add(eval.precision(0));
-			tempResult.add(eval.precision(1));
-			tempResult.add(eval.fMeasure(0));
-			tempResult.add(eval.fMeasure(1));
-			tempResult.add(eval.areaUnderROC(1));
-			tempResult.add(Math.sqrt(tempResult.get(0) * tempResult.get(1)));
+			List<Double> tempResult=Evaluation10(choose, i);
 			TenRes.add(tempResult);
 		}
-
-		for (int i = 0; i < 8; i++) {
+		res=new ArrayList<>();
+		for (int i = 0; i < TenRes.get(0).size(); i++) {
 			double temp = 0.0;
 			for (int j = 0; j < 10; j++) {
 				temp = temp + TenRes.get(j).get(i);
@@ -175,21 +165,26 @@ public class Classify {
 
 	/**
 	 * 单纯的十折交叉验证
+	 * 
 	 * @param choose
 	 * @throws Exception
 	 */
-	public void Evaluation10(int choose) throws Exception {
-		res = new ArrayList<>();
+	public List<Double> Evaluation10(int choose, int randomNum)
+			throws Exception {
+		List<Double> LocRes = new ArrayList<>();
 		eval = new MyEvaluation(ins, choose);
-		eval.crossValidateModel(cla, ins, 10, new Random(10));
-		res.add(eval.recall(0));
-		res.add(eval.recall(1));
-		res.add(eval.precision(0));
-		res.add(eval.precision(1));
-		res.add(eval.fMeasure(0));
-		res.add(eval.fMeasure(1));
-		res.add(eval.areaUnderROC(1));
-		res.add(Math.sqrt(res.get(0) * res.get(1)));
+		eval.crossValidateModel(cla, ins, 10, new Random(randomNum));
+		LocRes.add(eval.recall(0));
+		LocRes.add(eval.recall(1));
+		LocRes.add(eval.precision(0));
+		LocRes.add(eval.precision(1));
+		LocRes.add(eval.fMeasure(0));
+		LocRes.add(eval.fMeasure(1));
+		LocRes.add(eval.areaUnderROC(1));
+		LocRes.add(Math.sqrt(res.get(0) * res.get(1)));
+		LocRes.add(1 - eval.errorRate());
+		res = LocRes;
+		return LocRes;
 	}
 
 }
