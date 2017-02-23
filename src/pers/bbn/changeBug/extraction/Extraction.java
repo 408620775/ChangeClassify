@@ -61,6 +61,7 @@ public abstract class Extraction {
 	private void initialCommitFileIds() throws Exception {
 		commit_ids = new ArrayList<>();
 		commitIdPart = new ArrayList<>();
+		commit_fileIds=new ArrayList<>();
 		sql = "select id from scmlog order by commit_date";
 		resultSet = stmt.executeQuery(sql);
 		while (resultSet.next()) {
@@ -76,6 +77,7 @@ public abstract class Extraction {
 		for (int i = start - 1; i < end; i++) {
 			sql = "select file_id,current_file_path from actions where commit_id="
 					+ commit_ids.get(i) + " and type!='D'";
+			commitIdPart.add(commit_ids.get(i));
 			resultSet = stmt.executeQuery(sql);
 			while (resultSet.next()) {
 				String current_file_path = resultSet.getString(2);
@@ -85,7 +87,6 @@ public abstract class Extraction {
 					tmp.add(commit_ids.get(i));
 					tmp.add(resultSet.getInt(1));
 					commit_fileIds.add(tmp);
-					commitIdPart.add(resultSet.getInt(commit_ids.get(i)));
 				}
 			}
 		}

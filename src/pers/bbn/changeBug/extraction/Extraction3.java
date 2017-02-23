@@ -57,9 +57,9 @@ public class Extraction3 extends Extraction {
 	 */
 	//FIXME 由于setICFfromDatabase存在问题,本方法也有待改进.
 	public Extraction3(String database, String projectHome, int startId,
-			int endId) throws Exception {
+			int endId,List<List<Integer>> cf) throws Exception {
 		super(database,startId,endId);
-		//setICFfromDatabase(startId, endId);
+		
 		dictionary = new HashMap<>();
 		currStrings = new HashSet<>();
 		contentMap = new LinkedHashMap<>();
@@ -68,7 +68,11 @@ public class Extraction3 extends Extraction {
 		headmap.add(-1);
 		headmap.add(-1);
 		contentMap.put(headmap, new StringBuffer());
-		contentMap.keySet().addAll(commit_fileIds);
+		commit_fileIds=cf;
+		for (List<Integer> list : commit_fileIds) {
+			contentMap.put(list, new StringBuffer());
+		}
+		
 		
 		changeLogInfo();
 		sourceInfo(projectHome);
@@ -141,9 +145,9 @@ public class Extraction3 extends Extraction {
 	 * @throws IOException
 	 */
 	public void changeLogInfo() throws SQLException, IOException {
+		System.out.println("extract changLog info.");
 		for (Integer commitId : commitIdPart) {
 			if (commitId != -1) {
-				System.out.println(commitId);
 				sql = "select message from scmlog where id=" + commitId;
 				resultSet = stmt.executeQuery(sql);
 				resultSet.next();
@@ -169,10 +173,8 @@ public class Extraction3 extends Extraction {
 	 * @throws IOException
 	 */
 	public void sourceInfo(String projectHome) throws SQLException, IOException {
+		System.out.println("extract source info.");
 		for (List<Integer> list : commit_fileIds) {
-				System.out.println("extract from " + list.get(0) + "_"
-						+ list.get(1) + ".java");
-
 				sql = "select patch from patches where commit_id="
 						+ list.get(0) + " and file_id=" + list.get(1);
 
@@ -180,7 +182,7 @@ public class Extraction3 extends Extraction {
 				String patchString = "";
 				if (!resultSet.next()) {
 					System.out.println("patches in commit_id=" + list.get(0)
-							+ " and file_id" + list.get(1) + " is empty!");
+							+ " and file_id=" + list.get(1) + " is empty!");
 				} else {
 					patchString = resultSet.getString(1);
 				}
@@ -286,6 +288,7 @@ public class Extraction3 extends Extraction {
 	 * @throws IOException
 	 */
 	public void pathInfo() throws SQLException, IOException {
+		System.out.println("extract path info.");
 		for (List<Integer> list : commit_fileIds) {
 			sql = "select current_file_path from actions where commit_id="
 					+ list.get(0) + " and file_id=" + list.get(1);
