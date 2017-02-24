@@ -1133,12 +1133,16 @@ public final class Extraction1 extends Extraction {
 
 	/**
 	 * 根据给定的commit_fileId对,返回每个对儿对应的类标签.
-	 * @param someCommit_fileIds 要求返回类标签的commit_fileId对.
+	 * 
+	 * @param someCommit_fileIds
+	 *            要求返回类标签的commit_fileId对.
 	 * @return 包含类标签的map信息.
 	 * @throws SQLException
+	 * @throws InsExistenceException
 	 */
 	public Map<List<Integer>, String> getClassLabels(
-			List<List<Integer>> someCommit_fileIds) throws SQLException {
+			List<List<Integer>> someCommit_fileIds) throws SQLException,
+			InsExistenceException {
 		Map<List<Integer>, String> map = new LinkedHashMap<List<Integer>, String>();
 		for (List<Integer> list : someCommit_fileIds) {
 			sql = "select bug_introducing from extraction1 where commit_id="
@@ -1148,15 +1152,11 @@ public final class Extraction1 extends Extraction {
 			while (resultSet.next()) {
 				bug_intro = resultSet.getString(1);
 			}
-			try {
-				if (bug_intro == null) {
-					throw new InsExistenceException(list.get(0), list.get(1));
-				}else {
-					map.put(list, bug_intro);
-				}
-			} catch (InsExistenceException e) {
-				System.out.println(e.getMessage());
-				e.printStackTrace();
+
+			if (bug_intro == null) {
+				throw new InsExistenceException(list.get(0), list.get(1));
+			} else {
+				map.put(list, bug_intro);
 			}
 		}
 		return map;
