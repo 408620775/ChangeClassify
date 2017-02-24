@@ -45,6 +45,6 @@ public class Extraction1Test {
 		for (List<Integer> key : contentMap.keySet()) {
 			System.out.println(contentMap.get(key));
 		}
-
 	}
+	
 }

@@ -19,6 +19,8 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
+import pres.bbn.changeBug.exception.InsExistenceException;
+
 /**
  * 从miningit生成的数据库中提取一些基本信息，例如作者姓名，提交时间，累计的bug计数等信息。 构造函数中提供需要连接的数据库。
  * 根据指定的范围获取commit_id列表（按照时间顺序）。通过对各表的操作获取一些基本数据。
@@ -1127,6 +1129,37 @@ public final class Extraction1 extends Extraction {
 	 */
 	private int getYearFromCommitdateString(String commit_date) {
 		return Integer.parseInt(commit_date.split(" ")[0].split("-")[0]);
+	}
+
+	/**
+	 * 根据给定的commit_fileId对,返回每个对儿对应的类标签.
+	 * @param someCommit_fileIds 要求返回类标签的commit_fileId对.
+	 * @return 包含类标签的map信息.
+	 * @throws SQLException
+	 */
+	public Map<List<Integer>, String> getClassLabels(
+			List<List<Integer>> someCommit_fileIds) throws SQLException {
+		Map<List<Integer>, String> map = new LinkedHashMap<List<Integer>, String>();
+		for (List<Integer> list : someCommit_fileIds) {
+			sql = "select bug_introducing from extraction1 where commit_id="
+					+ list.get(0) + " and file_id=" + list.get(1);
+			resultSet = stmt.executeQuery(sql);
+			String bug_intro = null;
+			while (resultSet.next()) {
+				bug_intro = resultSet.getString(1);
+			}
+			try {
+				if (bug_intro == null) {
+					throw new InsExistenceException(list.get(0), list.get(1));
+				}else {
+					map.put(list, bug_intro);
+				}
+			} catch (InsExistenceException e) {
+				System.out.println(e.getMessage());
+				e.printStackTrace();
+			}
+		}
+		return map;
 	}
 
 	@Override
