@@ -367,17 +367,15 @@ public class Extraction4 extends Extraction {
 	}
 
 	@Override
-	public Map<List<Integer>, String> getContentMap(
+	public Map<List<Integer>, StringBuffer> getContentMap(
 			List<List<Integer>> someCommit_fileIds) throws SQLException {
-		Map<List<Integer>, String> content=new LinkedHashMap<>();
+		Map<List<Integer>, StringBuffer> content=new LinkedHashMap<>();
 		List<Integer> title = new ArrayList<>();
 		title.add(-1);
 		title.add(-1);
-		int titleLen=contentMap.get(title).length();
-		content.put(title, contentMap.get(title).substring(0, titleLen-1));
+		content.put(title, contentMap.get(title));
 		for (List<Integer> list : someCommit_fileIds) {
-			int len=contentMap.get(list).length();
-			content.put(list, contentMap.get(list).substring(0,len-1));
+			content.put(list, contentMap.get(list));
 		}
 		return content;
 	}

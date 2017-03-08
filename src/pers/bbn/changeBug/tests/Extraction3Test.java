@@ -23,7 +23,7 @@ public class Extraction3Test {
 		Extraction3 extraction3 = new Extraction3("MyVoldemort",
 				"/home/niu/test/voldemortR/voldemortFiles", 501, 800,
 				commit_fileIds);
-		Map<List<Integer>, String> contentMap = extraction3
+		Map<List<Integer>, StringBuffer> contentMap = extraction3
 				.getContentMap(commit_fileIds);
 		System.out.println(contentMap.size());
 	}

@@ -1140,6 +1140,7 @@ public final class Extraction1 extends Extraction {
 	 * @throws SQLException
 	 * @throws InsExistenceException
 	 */
+	//可与obtainCFidInExtraction1函数合并.
 	public Map<List<Integer>, String> getClassLabels(
 			List<List<Integer>> someCommit_fileIds) throws SQLException,
 			InsExistenceException {
@@ -1163,9 +1164,9 @@ public final class Extraction1 extends Extraction {
 	}
 
 	@Override
-	public Map<List<Integer>, String> getContentMap(
+	public Map<List<Integer>, StringBuffer> getContentMap(
 			List<List<Integer>> someCommit_fileIds) throws SQLException {
-		Map<List<Integer>, String> content = new LinkedHashMap<>();
+		Map<List<Integer>, StringBuffer> content = new LinkedHashMap<>();
 		List<Integer> title = new ArrayList<>();
 		title.add(-1);
 		title.add(-1);
@@ -1173,11 +1174,16 @@ public final class Extraction1 extends Extraction {
 		sql = "select * from extraction1 where id=1";
 		resultSet = stmt.executeQuery(sql);
 		int colcount = resultSet.getMetaData().getColumnCount();
-		for (int i = 4; i < colcount; i++) {
-			titleBuffer.append(resultSet.getMetaData().getColumnName(i) + ",");
+		int labelIndex=0;
+		for (int i = 4; i <= colcount; i++) {
+			String colName=resultSet.getMetaData().getColumnName(i);
+			if (!colName.equals("bug_introducing")) {
+				titleBuffer.append(colName+ ",");
+			}else {
+				labelIndex=i;
+			}
 		}
-		titleBuffer.append(resultSet.getMetaData().getColumnName(colcount));
-		content.put(title, titleBuffer.toString());
+		content.put(title, titleBuffer);
 
 		for (List<Integer> commit_fileId : someCommit_fileIds) {
 			StringBuffer temp = new StringBuffer();
@@ -1187,11 +1193,13 @@ public final class Extraction1 extends Extraction {
 			resultSet = stmt.executeQuery(sql);
 			int colCount = resultSet.getMetaData().getColumnCount();
 			resultSet.next();
-			for (int i = 4; i < colCount; i++) {
-				temp.append(resultSet.getString(i) + ",");
+			for (int i = 4; i <= colCount; i++) {
+				if (i!=labelIndex) {
+					temp.append(resultSet.getString(i) + ",");
+				}
+				
 			}
-			temp.append(resultSet.getString(colcount));
-			content.put(commit_fileId, temp.toString());
+			content.put(commit_fileId, temp);
 		}
 		return content;
 	}

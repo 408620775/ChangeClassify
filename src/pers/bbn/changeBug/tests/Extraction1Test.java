@@ -3,7 +3,6 @@ package pers.bbn.changeBug.tests;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -37,7 +36,7 @@ public final class Extraction1Test {
 	}
 
 	public void testGetContentMap() throws Exception {
-		Map<List<Integer>, String> contentMap = extraction1
+		Map<List<Integer>, StringBuffer> contentMap = extraction1
 				.getContentMap(extraction1.getCommit_file_inExtracion1());
 		for (List<Integer> key : contentMap.keySet()) {
 			System.out.println(contentMap.get(key));

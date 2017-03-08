@@ -21,7 +21,7 @@ public class Extraction2Test {
 	public final void testGetContentMap() throws Exception {
 		Extraction2 extraction2=new Extraction2("MyVoldemort", 501, 800);
 		extraction2.extraFromTxt("/home/niu/test/voldemortR/MyVoldemortMetrics.txt");
-		Map<List<Integer>, String> contentMap=extraction2.getContentMap(commit_fileIds);
+		Map<List<Integer>, StringBuffer> contentMap=extraction2.getContentMap(commit_fileIds);
 		for (List<Integer> key : contentMap.keySet()) {
 			System.out.println(contentMap.get(key));
 		}
