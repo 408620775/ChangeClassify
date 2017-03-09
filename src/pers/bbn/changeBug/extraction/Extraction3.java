@@ -57,7 +57,7 @@ public class Extraction3 extends Extraction {
 	 */
 	//FIXME 由于setICFfromDatabase存在问题,本方法也有待改进.
 	public Extraction3(String database, String projectHome, int startId,
-			int endId,List<List<Integer>> cf) throws Exception {
+			int endId) throws Exception {
 		super(database,startId,endId);
 		
 		dictionary = new HashMap<>();
@@ -68,7 +68,7 @@ public class Extraction3 extends Extraction {
 		headmap.add(-1);
 		headmap.add(-1);
 		contentMap.put(headmap, new StringBuffer());
-		commit_fileIds=cf;
+		//commit_fileIds=cf;
 		for (List<Integer> list : commit_fileIds) {
 			contentMap.put(list, new StringBuffer());
 		}
