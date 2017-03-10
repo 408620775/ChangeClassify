@@ -10,11 +10,14 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
+import db.g;
 import pers.bbn.changeBug.extraction.Extraction1;
 import pers.bbn.changeBug.extraction.Extraction2;
 import pers.bbn.changeBug.extraction.Extraction3;
+import sun.security.jca.GetInstance;
 import weka.classifiers.Classifier;
 import weka.core.Instances;
+import weka.core.converters.CSVLoader;
 
 /**
  * 根据不同部分的属性分别构建不同的分类器,最后将所有分类器集成,按照投票结果决定实例最终的标签.
@@ -22,14 +25,32 @@ import weka.core.Instances;
  * @author niu
  *
  */
-public class PartBagging extends Classifier {
+public class PartBagging {
 	/**
 	 * 
 	 */
-	private static final long serialVersionUID = 2362961880179469521L;
 	private List<List<Integer>> commitFileIds;
 	private Map<List<Integer>, String> classLabels;
 	private static final String bufferDir = "/home/niu/bufferDir";
+	private List<Instances> datas;
+	private String database;
+	private List<String> filesName = Arrays.asList("MetaData.csv", "Metric.csv",
+			"Bow.csv");
+	
+	/**
+	 * 从不同部分文件获取不同部分实例集.
+	 * @return
+	 */
+	public List<Instances> getPartInsDatas() {
+		try {
+			datas=getInstanceList(database,filesName);
+		} catch (Exception e) {
+			System.out.println("从文件获取实例集失败!");
+			e.printStackTrace();
+		}
+		System.out.println("获取部分分类实例集成功.");
+		return datas;
+	}
 
 	/**
 	 * 构造函数,初始化变量
@@ -44,6 +65,8 @@ public class PartBagging extends Classifier {
 	 */
 	public PartBagging(String database, int start, int end, String metricsFile,
 			String projectHome) throws Exception{
+		System.out.println("构建部分分类集中....");
+		this.database=database;
 		Extraction1 extraction1 = new Extraction1(database, start, end);
 		commitFileIds = extraction1.getCommit_file_inExtracion1();
 		classLabels = extraction1.getClassLabels(commitFileIds);
@@ -59,8 +82,6 @@ public class PartBagging extends Classifier {
 				end);
 		Map<List<Integer>, StringBuffer> bowContent = extraction3
 				.getContentMap(commitFileIds);
-		List<String> filesName = Arrays.asList("MetaData.csv", "Metric.csv",
-				"Bow.csv");
 		List<Map<List<Integer>, StringBuffer>> contentsMap = Arrays.asList(
 				metaDataContent, matricsContent, bowContent);
 
@@ -70,7 +91,28 @@ public class PartBagging extends Classifier {
 			System.out.println(e.getMessage());
 			e.printStackTrace();
 		}
-		
+		System.out.println("不同部分实例集写入文件成功!");
+	}
+
+	/**
+	 * 根据给定的数据库和CSV文件名获取该数据库对应工程的不同部分的实例集.
+	 * @param database 数据库名称也即工程名称
+	 * @param filesName 不同部分的文件名
+	 * @return 不同部分对应的实例集
+	 * @throws IOException
+	 */
+	private List<Instances> getInstanceList(String database,
+			List<String> filesName) throws IOException {
+		List<Instances> datas=new ArrayList<>();
+		for (String fileName : filesName) {
+			fileName=fileName+database;
+			CSVLoader loader = new CSVLoader();
+			loader.setSource(new File(bufferDir+"/"+fileName));
+			Instances data = loader.getDataSet();
+		    data.setClass(data.attribute(data.numAttributes()-1));
+		    datas.add(data);
+		}
+		return datas;
 	}
 
 	/**
@@ -98,9 +140,9 @@ public class PartBagging extends Classifier {
 		}
 	}
 
-	@Override
-	public void buildClassifier(Instances data) throws Exception {
-
+	
+	public void buildClassifier(List<Instances> datas) throws Exception {
+		
 	}
 
 	/**

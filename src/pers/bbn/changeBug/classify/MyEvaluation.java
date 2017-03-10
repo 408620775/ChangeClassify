@@ -1,6 +1,8 @@
 package pers.bbn.changeBug.classify;
 
+import java.util.List;
 import java.util.Random;
+
 import weka.classifiers.Classifier;
 import weka.classifiers.Evaluation;
 import weka.core.Instances;
@@ -22,9 +24,9 @@ public final class MyEvaluation extends Evaluation {
 	 * 
 	 * @return
 	 */
-	public MyEvaluation(Instances data,int choose) throws Exception {
+	public MyEvaluation(Instances data, int choose) throws Exception {
 		super(data);
-		this.choose=choose;
+		this.choose = choose;
 	}
 
 	@Override
@@ -64,5 +66,4 @@ public final class MyEvaluation extends Evaluation {
 		}
 		m_NumFolds = numFolds;
 	}
-
 }
