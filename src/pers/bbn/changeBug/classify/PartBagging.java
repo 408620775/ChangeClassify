@@ -16,12 +16,13 @@ import pers.bbn.changeBug.extraction.Extraction2;
 import pers.bbn.changeBug.extraction.Extraction3;
 import sun.security.jca.GetInstance;
 import weka.classifiers.Classifier;
+import weka.classifiers.trees.J48;
 import weka.core.Instances;
 import weka.core.converters.CSVLoader;
 
 /**
  * 根据不同部分的属性分别构建不同的分类器,最后将所有分类器集成,按照投票结果决定实例最终的标签.
- * 
+ * 执行过程:(1)执行构造函数获得CSV文件.(2)执行getInstanceList获取instances实例集.
  * @author niu
  *
  */
@@ -36,21 +37,14 @@ public class PartBagging {
 	private String database;
 	private List<String> filesName = Arrays.asList("MetaData.csv",
 			"Metric.csv", "Bow.csv");
+	private Classifier baseClassifier;
 
-	/**
-	 * 从不同部分文件获取不同部分实例集.
-	 * 
-	 * @return
-	 */
-	public List<Instances> getPartInsDatas() {
-		try {
-			datas = getInstanceList(database, filesName);
-		} catch (Exception e) {
-			System.out.println("从文件获取实例集失败!");
-			e.printStackTrace();
-		}
-		System.out.println("获取部分分类实例集成功.");
-		return datas;
+	public Classifier getBaseClassifier() {
+		return baseClassifier;
+	}
+
+	public void setBaseClassifier(Classifier baseClassifier) {
+		this.baseClassifier = baseClassifier;
 	}
 
 	/**
@@ -92,29 +86,29 @@ public class PartBagging {
 			System.out.println(e.getMessage());
 			e.printStackTrace();
 		}
+		//是否先对bow做属性选择覆盖原有CSV文件?
+		//
+		//
 		System.out.println("不同部分实例集写入文件成功!");
 	}
 
 	/**
-	 * 根据给定的数据库和CSV文件名获取该数据库对应工程的不同部分的实例集.
-	 * 
-	 * @param database
-	 *            数据库名称也即工程名称
-	 * @param filesName
-	 *            不同部分的文件名
-	 * @return 不同部分对应的实例集
+	 * 取该数据库对应工程的不同部分的实例集.
 	 * @throws IOException
 	 */
-	private List<Instances> getInstanceList(String database,
-			List<String> filesName) throws IOException {
-		List<Instances> datas = new ArrayList<>();
+	public void getInstanceList()  {
 		for (String fileName : filesName) {
-			fileName = fileName + database;
-			Instances data = PreProcess.readInstancesFromCSV(bufferDir + "/"
-					+ fileName);
-			datas.add(data);
+			fileName = database+fileName;
+			Instances data;
+			try {
+				data = PreProcess.readInstancesFromCSV(bufferDir + "/"
+						+ fileName);
+				datas.add(data);
+			} catch (IOException e) {
+				System.out.println("从CSV文件获取实例失败!");
+				e.printStackTrace();
+			}
 		}
-		return datas;
 	}
 
 	/**
@@ -147,8 +141,8 @@ public class PartBagging {
 		}
 	}
 
-	public void buildClassifier(List<Instances> datas) throws Exception {
-
+	public void buildClassifier() throws Exception {
+		
 	}
 
 	/**
