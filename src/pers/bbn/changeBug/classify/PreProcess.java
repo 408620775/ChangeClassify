@@ -114,31 +114,6 @@ public class PreProcess {
 		return instances;
 	}
 
-	/**
-	 * 使用cfs和LinearForward搜索选择属性。
-	 * 
-	 * @param data
-	 *            需要进行属性选择的实例。
-	 * @return 选择后的实例集。
-	 * @throws Exception
-	 */
-	protected static Instances selectAttr(Instances data) throws Exception {
-		System.out.println("use cfs select the attributes!");
-		data.setClass(data.attribute("bug_introducing"));
-		System.out.println(data.classIndex());
-		AttributeSelection attributeSelection = new AttributeSelection();
-		attributeSelection.setEvaluator(new CfsSubsetEval());
-		LinearForwardSelection eval = new LinearForwardSelection();
-		eval.setOptions(new String[] { "-I", "-K", "3000" });
-		attributeSelection.setSearch(eval);
-		attributeSelection.SelectAttributes(data);
-		data = attributeSelection.reduceDimensionality(data);
-
-		// Instances data2=Filter.useFilter(data, attributeSelection);
-		// System.out.println(data2.numAttributes());
-		return data;
-	}
-
 	public Instances NumLn(Instances data, String className) {
 		System.out.println("数值型属性自然对数化");
 		data.setClass(data.attribute(className));
