@@ -11,7 +11,7 @@ public class PartBaggingTest {
 	@Test
 	public final void test() {
 		try {
-			PartBagging partBagging = new PartBagging("MyVoldemort", 501, 600,
+			PartBagging partBagging = new PartBagging("MyVoldemort", 501, 800,
 					"/home/niu/test/voldemortR/MyVoldemortMetrics.txt",
 					"/home/niu/test/voldemortR/voldemortFiles");
 		} catch (Exception e) {

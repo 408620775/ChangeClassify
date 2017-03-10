@@ -4,6 +4,9 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+
+import weka.attributeSelection.ASEvaluation;
+import weka.attributeSelection.ASSearch;
 import weka.attributeSelection.AttributeSelection;
 import weka.attributeSelection.CfsSubsetEval;
 import weka.attributeSelection.LinearForwardSelection;
@@ -35,7 +38,7 @@ public class PreProcess {
 		CSVLoader loader = new CSVLoader();
 		loader.setSource(new File(csv));
 		Instances data = loader.getDataSet();
-	    data.setClass(data.attribute("bug_introducing")); //
+		data.setClass(data.attribute("bug_introducing")); //
 		// 未使用weka去除id前类标签索引为11，此处一定要注意。
 		ArffSaver saver = new ArffSaver();
 		saver.setInstances(data);
@@ -62,9 +65,9 @@ public class PreProcess {
 			Discretize discretize = new Discretize();
 			int[] dis = new int[1];
 			dis[0] = instances.attribute("bug_introducing").index();
-			int index=instances.attribute("bug_introducing").index();
+			int index = instances.attribute("bug_introducing").index();
 			System.out.println(index);
-			discretize.setAttributeIndices(index+"");
+			discretize.setAttributeIndices(index + "");
 			if (discretize.batchFinished()) {
 				System.out.println("类标签离散化成功");
 			}
@@ -135,40 +138,90 @@ public class PreProcess {
 		// System.out.println(data2.numAttributes());
 		return data;
 	}
-	
-	public Instances NumLn(Instances data,String className) {
+
+	public Instances NumLn(Instances data, String className) {
 		System.out.println("数值型属性自然对数化");
 		data.setClass(data.attribute(className));
-		int numA=data.numAttributes();
-		int numI=data.numInstances();
+		int numA = data.numAttributes();
+		int numI = data.numInstances();
 		for (int i = 0; i < numA; i++) {
 			if (data.attribute(i).isNumeric()) {
-				double min=Double.MAX_VALUE;
+				double min = Double.MAX_VALUE;
 				if (data.attribute(i).name().contains("s")) {
-					min=0.0001;
-				}else {
-					for (int j = 0; j <numI; j++) {
-						if (data.instance(j).value(i)<min) {
-							min=data.instance(j).value(i);
+					min = 0.0001;
+				} else {
+					for (int j = 0; j < numI; j++) {
+						if (data.instance(j).value(i) < min) {
+							min = data.instance(j).value(i);
 						}
 					}
-					if (min==0) {
-						min=0.0001;
+					if (min == 0) {
+						min = 0.0001;
 					}
 				}
-				if (min>0) {
-					for (int j = 0; j <numI; j++) {
-						data.instance(j).setValue(i, Math.log(data.instance(j).value(i)+min));
-					}
-				}else {
-					double delta=Math.abs(min);
+				if (min > 0) {
 					for (int j = 0; j < numI; j++) {
-						data.instance(j).setValue(i, Math.log(data.instance(j).value(i)+delta+0.0001));
+						data.instance(j).setValue(i,
+								Math.log(data.instance(j).value(i) + min));
+					}
+				} else {
+					double delta = Math.abs(min);
+					for (int j = 0; j < numI; j++) {
+						data.instance(j).setValue(
+								i,
+								Math.log(data.instance(j).value(i) + delta
+										+ 0.0001));
 					}
 				}
 			}
-			
+
 		}
+		return data;
+	}
+
+	/**
+	 * 执行属性选择
+	 * 
+	 * @param data
+	 *            需要进行属性选择的数据集
+	 * @param evaluation
+	 *            Abstract attribute selection evaluation class
+	 * @param search
+	 *            Abstract attribute selection search
+	 * @return
+	 */
+	public static Instances selectAttributes(Instances data,
+			ASEvaluation evaluation, ASSearch search) {
+		AttributeSelection attributeSelection = new AttributeSelection();
+		attributeSelection.setEvaluator(evaluation);
+		attributeSelection.setSearch(search);
+		System.out.println("选择前的属性个数:"+data.numAttributes());
+		try {
+			attributeSelection.SelectAttributes(data);
+			data=attributeSelection.reduceDimensionality(data);
+		} catch (Exception e) {
+			System.out.println("属性选择过程失败!");
+			e.printStackTrace();
+		}
+		System.out.println("选择后的属性个数:"+data.numAttributes());
+		System.out.println("属性类标签:"+data.classAttribute());
+		return data;
+	}
+
+	/**
+	 * 读取CSV文件中的instances,默认最后一列为类标签.
+	 * 
+	 * @param fileName
+	 *            给定的文件路径.
+	 * @return CSV文件中的instances
+	 * @throws IOException
+	 */
+	public static Instances readInstancesFromCSV(String fileName)
+			throws IOException {
+		CSVLoader loader = new CSVLoader();
+		loader.setSource(new File(fileName));
+		Instances data = loader.getDataSet();
+		data.setClass(data.attribute(data.numAttributes() - 1));
 		return data;
 	}
 }

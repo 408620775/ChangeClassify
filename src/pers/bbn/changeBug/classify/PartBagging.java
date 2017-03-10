@@ -34,16 +34,17 @@ public class PartBagging {
 	private static final String bufferDir = "/home/niu/bufferDir";
 	private List<Instances> datas;
 	private String database;
-	private List<String> filesName = Arrays.asList("MetaData.csv", "Metric.csv",
-			"Bow.csv");
-	
+	private List<String> filesName = Arrays.asList("MetaData.csv",
+			"Metric.csv", "Bow.csv");
+
 	/**
 	 * 从不同部分文件获取不同部分实例集.
+	 * 
 	 * @return
 	 */
 	public List<Instances> getPartInsDatas() {
 		try {
-			datas=getInstanceList(database,filesName);
+			datas = getInstanceList(database, filesName);
 		} catch (Exception e) {
 			System.out.println("从文件获取实例集失败!");
 			e.printStackTrace();
@@ -64,9 +65,9 @@ public class PartBagging {
 	 * @throws Exception
 	 */
 	public PartBagging(String database, int start, int end, String metricsFile,
-			String projectHome) throws Exception{
+			String projectHome) throws Exception {
 		System.out.println("构建部分分类集中....");
-		this.database=database;
+		this.database = database;
 		Extraction1 extraction1 = new Extraction1(database, start, end);
 		commitFileIds = extraction1.getCommit_file_inExtracion1();
 		classLabels = extraction1.getClassLabels(commitFileIds);
@@ -96,31 +97,37 @@ public class PartBagging {
 
 	/**
 	 * 根据给定的数据库和CSV文件名获取该数据库对应工程的不同部分的实例集.
-	 * @param database 数据库名称也即工程名称
-	 * @param filesName 不同部分的文件名
+	 * 
+	 * @param database
+	 *            数据库名称也即工程名称
+	 * @param filesName
+	 *            不同部分的文件名
 	 * @return 不同部分对应的实例集
 	 * @throws IOException
 	 */
 	private List<Instances> getInstanceList(String database,
 			List<String> filesName) throws IOException {
-		List<Instances> datas=new ArrayList<>();
+		List<Instances> datas = new ArrayList<>();
 		for (String fileName : filesName) {
-			fileName=fileName+database;
-			CSVLoader loader = new CSVLoader();
-			loader.setSource(new File(bufferDir+"/"+fileName));
-			Instances data = loader.getDataSet();
-		    data.setClass(data.attribute(data.numAttributes()-1));
-		    datas.add(data);
+			fileName = fileName + database;
+			Instances data = PreProcess.readInstancesFromCSV(bufferDir + "/"
+					+ fileName);
+			datas.add(data);
 		}
 		return datas;
 	}
 
 	/**
 	 * 根据数据库名(也就是工程名),不同部分的属性内容,类标签的对应关系,创建不同部分的csv文件,用于分别训练基分类器.
-	 * @param database 数据库名,也是工程名
-	 * @param filesName 得到的一系列csv文件的名称
-	 * @param contentsMap 包含不同部分属性的Map
-	 * @param classLabels 包含类标签属性的Map
+	 * 
+	 * @param database
+	 *            数据库名,也是工程名
+	 * @param filesName
+	 *            得到的一系列csv文件的名称
+	 * @param contentsMap
+	 *            包含不同部分属性的Map
+	 * @param classLabels
+	 *            包含类标签属性的Map
 	 * @throws Exception
 	 */
 	private void createPartCsv(String database, List<String> filesName,
@@ -140,9 +147,8 @@ public class PartBagging {
 		}
 	}
 
-	
 	public void buildClassifier(List<Instances> datas) throws Exception {
-		
+
 	}
 
 	/**
@@ -192,7 +198,7 @@ public class PartBagging {
 				throw new Exception("labels don't have the of <" + list.get(0)
 						+ "," + list.get(1) + ">");
 			}
-			if (labelsMap.get(list).equals(1)) {
+			if (labelsMap.get(list).equals("1")) {
 				bufferedWriter.append(content.get(list) + "True" + "\n");
 			} else {
 				bufferedWriter.append(content.get(list) + "False" + "\n");
