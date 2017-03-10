@@ -8,6 +8,7 @@ import java.util.List;
 import weka.attributeSelection.ASEvaluation;
 import weka.attributeSelection.ASSearch;
 import weka.attributeSelection.AttributeSelection;
+import weka.attributeSelection.BestFirst;
 import weka.attributeSelection.CfsSubsetEval;
 import weka.attributeSelection.LinearForwardSelection;
 import weka.core.Instances;
@@ -99,7 +100,7 @@ public class PreProcess {
 			int deltIndex = deleAttri.get(i) - i;
 			instances.deleteAttributeAt(deltIndex);
 		}
-		instances = selectAttr(instances);
+		instances = selectAttributes(instances, new CfsSubsetEval(), new BestFirst());
 
 		ArffSaver arffSaver = new ArffSaver();
 		arffSaver.setInstances(instances);
