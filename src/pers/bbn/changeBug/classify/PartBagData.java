@@ -14,6 +14,11 @@ import pers.bbn.changeBug.extraction.Extraction2;
 import pers.bbn.changeBug.extraction.Extraction3;
 import weka.core.Instances;
 
+/**
+ * 为PartBagging组合数据.
+ * @author niu
+ *
+ */
 public class PartBagData {
 
 	private List<List<Integer>> commitFileIds;
@@ -106,6 +111,17 @@ public class PartBagData {
 		}
 	}
 	
+	/**
+	 * 根据给定的content,以及类标签的对应关系,将实例信息写入csv文件,以便读取instance实例.
+	 * 
+	 * @param fileName
+	 *            写入的文件的名称,命名规则为 工程名+MateData/Metrics/Bow.csv
+	 * @param content
+	 *            包含实例属性信息的Map,不包含类标签.
+	 * @param labelsMap
+	 *            包含类标签信息的Map.
+	 * @throws Exception
+	 */
 	public void writeContentMapToCsvFile(String fileName,
 			Map<List<Integer>, StringBuffer> content,
 			Map<List<Integer>, String> labelsMap) throws Exception {
