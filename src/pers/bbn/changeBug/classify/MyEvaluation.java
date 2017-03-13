@@ -66,4 +66,10 @@ public final class MyEvaluation extends Evaluation {
 		}
 		m_NumFolds = numFolds;
 	}
+	
+	public void crossValidateModel(PartBagging classifier, List<Instances> data,
+			int numFolds, Random random)
+			throws Exception {
+		
+	}
 }
