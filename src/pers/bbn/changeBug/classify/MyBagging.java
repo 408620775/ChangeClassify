@@ -299,7 +299,6 @@ public class MyBagging extends RandomizableIteratedSingleClassifierEnhancer
 		if (m_CalcOutOfBag)
 			inBag = new boolean[m_Classifiers.length][];
 		
-		Sample.setClassName(className);
 		for (int j = 0; j < m_Classifiers.length; j++) {
 			Instances bagData = null;
 
