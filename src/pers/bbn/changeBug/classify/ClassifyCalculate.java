@@ -2,11 +2,15 @@ package pers.bbn.changeBug.classify;
 
 import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
+import javax.tools.Tool;
+
+import pers.bbn.changeBug.extraction.MyTool;
 import weka.classifiers.Classifier;
 import weka.core.Instances;
 
@@ -77,9 +81,9 @@ public class ClassifyCalculate {
 	 */
 	public ClassifyCalculate(Instances instances) {
 		this.ins = instances;
-		this.className = instances.attribute(instances.numAttributes() - 1)
-				.name();
-		this.ins.setClassIndex(instances.numAttributes()-1);
+//		this.className = instances.attribute(instances.numAttributes() - 1)
+//				.name();
+//		this.ins.setClassIndex(instances.numAttributes()-1);
 		res=new LinkedHashMap<>();
 	}
 
@@ -90,13 +94,13 @@ public class ClassifyCalculate {
 	 */
 	public void totalCal() throws Exception {
 		Classify classify = null;
-		for (int i = 0; i < classifys.length; i++) {
+		for (int i = 0; i < 1; i++) {
 			for (int j = 0; j < 3; j++) {
 				List<String> keyList = new ArrayList<>();
 				keyList.add(classifys[i]);
 				keyList.add(methods[j]);
 				classify = new Classify((Classifier) Class
-						.forName(classifys[i]).newInstance(), ins, className);
+						.forName(classifys[i]).newInstance(), ins);
 				// classify.Evaluation100(j);
 				classify.Evaluation10(j, new Random().nextInt(10));
 				res.put(keyList, classify.getRes());
@@ -110,21 +114,12 @@ public class ClassifyCalculate {
 				// Bagging bagging=new Bagging();
 				bagging.setClassifier((Classifier) Class.forName(classifys[i])
 						.newInstance());
-				classify = new Classify(bagging, ins, className);
+				classify = new Classify(bagging, ins);
 				// classify.Evaluation100(j-3);
 				classify.Evaluation10(j - 3, new Random().nextInt(10));
 				res.put(keyList, classify.getRes());
 			}
 		}
-		DecimalFormat df = new DecimalFormat("0.00");
-		for (List<String> m : res.keySet()) {
-			for (String string : m) {
-				System.out.print(string + "  ");
-			}
-			for (Double value : res.get(m)) {
-				System.out.print(df.format(value) + "  ");
-			}
-			System.out.println();
-		}
+		MyTool.printRes(res);
 	}
 }

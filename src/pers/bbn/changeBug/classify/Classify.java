@@ -18,7 +18,6 @@ public class Classify {
 	private Evaluation eval;
 	private Instances ins;
 	private List<Double> res;
-	private String className = "bug_introducing";
 
 	/**
 	 * 查看当前所用评估对象.
@@ -36,25 +35,6 @@ public class Classify {
 	 */
 	public void setEval(Evaluation eval) {
 		this.eval = eval;
-	}
-
-	/**
-	 * 查看当前类属性名称
-	 * 
-	 * @return 类属性名称
-	 */
-	public String getClassName() {
-		return className;
-	}
-
-	/**
-	 * 设置当前类属性,默认为"bug_introducing"
-	 * 
-	 * @param className
-	 *            类属性名称.
-	 */
-	public void setClassName(String className) {
-		this.className = className;
 	}
 
 	/**
@@ -110,7 +90,6 @@ public class Classify {
 	 */
 	public void setIns(Instances ins) {
 		this.ins = ins;
-		ins.setClass(ins.attribute(className));
 	}
 
 	/**
@@ -123,11 +102,9 @@ public class Classify {
 	 * @param claName
 	 *            用于分类的类标签,默认为bug_introducing.
 	 */
-	public Classify(Classifier classifier, Instances instances, String claName) {
+	public Classify(Classifier classifier, Instances instances) {
 		this.cla = classifier;
 		this.ins = instances;
-		this.className = claName;
-		ins.setClass(ins.attribute(className));
 	}
 
 	/**
@@ -135,9 +112,8 @@ public class Classify {
 	 * 
 	 * @param classifier
 	 */
-	public Classify(Classifier classifier, String claName) {
+	public Classify(Classifier classifier) {
 		this.cla = classifier;
-		this.className = claName;
 	}
 
 	/**

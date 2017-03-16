@@ -1,11 +1,11 @@
 package pers.bbn.changeBug.classify;
 
-import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileWriter;
 import java.text.DecimalFormat;
 import java.util.List;
 import java.util.Map;
+
+import pers.bbn.changeBug.extraction.MyTool;
 import weka.core.Instances;
 import weka.core.converters.ArffLoader;
 
@@ -16,7 +16,7 @@ import weka.core.converters.ArffLoader;
  *
  */
 public class Main {
-	static DecimalFormat df = new DecimalFormat("0.00");
+	
 
 	public static void main(String[] args) throws Exception {
 		excuteClassifyCalfulateForSingleFile(
@@ -42,6 +42,7 @@ public class Main {
 		ArffLoader arffLoader = new ArffLoader();
 		arffLoader.setFile(arffFile);
 		Instances instances = arffLoader.getDataSet();
+		instances.setClassIndex(instances.numAttributes()-1);
 		ClassifyCalculate classifyCalculate = new ClassifyCalculate(instances);
 		classifyCalculate.totalCal();
 		Map<List<String>, List<Double>> resMap = classifyCalculate.getRes();
@@ -50,18 +51,7 @@ public class Main {
 		if (saverFile.exists()) {
 			saverFile.createNewFile();
 		}
-		BufferedWriter bWriter = new BufferedWriter(new FileWriter(saverFile));
-		for (List<String> key : resMap.keySet()) {
-			for (String string2 : key) {
-				bWriter.append(string2 + ",");
-			}
-			for (double dou : resMap.get(key)) {
-				bWriter.append(df.format(dou) + ",");
-			}
-			bWriter.append("\n");
-		}
-		bWriter.flush();
-		bWriter.close();
+		MyTool.saveRes(resMap,saverFile);
 	}
 
 	/**

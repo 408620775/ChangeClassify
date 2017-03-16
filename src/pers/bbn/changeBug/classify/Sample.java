@@ -72,6 +72,7 @@ public class Sample {
 		} else {
 			res = excuteSample(Noinstances, YesInstances, 1);
 		}
+		res.setClass(init.classAttribute());
 		return res;
 	}
 
@@ -148,6 +149,7 @@ public class Sample {
 		} else {
 			res = excuteSample(YesInstances, NoInstances, 1);
 		}
+		res.setClass(init.classAttribute());
 		return res;
 	}
 
@@ -161,6 +163,7 @@ public class Sample {
 		SMOTE smote = new SMOTE();
 		smote.setInputFormat(ins);
 		Instances smoteInstances = Filter.useFilter(ins, smote);
+		smoteInstances.setClass(ins.classAttribute());
 		return smoteInstances;
 	}
 
@@ -185,7 +188,7 @@ public class Sample {
 		for (int i = 0; i < totalNum; i++) {
 			res.add(init.instance(rn.nextInt(numInstance)));
 		}
-		res.setClassIndex(res.classIndex());
+		res.setClass(init.classAttribute());
 		return res;
 	}
 

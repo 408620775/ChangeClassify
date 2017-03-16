@@ -58,6 +58,7 @@ public final class MyEvaluation extends Evaluation {
 			} else {
 				train = Sample.OverSample(trainOrigin);
 			}
+			train.setClass(data.classAttribute());
 			setPriors(train);
 			Classifier copiedClassifier = Classifier.makeCopy(classifier);
 			copiedClassifier.buildClassifier(train);
