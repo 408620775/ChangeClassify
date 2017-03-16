@@ -16,25 +16,6 @@ import weka.filters.supervised.instance.SMOTE;
  */
 public class Sample {
 
-	private static String className = "bug_introducing";
-
-	/**
-	 * 查看当前采样样例的类标签.
-	 * 
-	 * @return
-	 */
-	public static String getClassName() {
-		return className;
-	}
-
-	/**
-	 * 设置当前采样样例的类标签,默认为"bug_introducing".
-	 * 
-	 * @param className
-	 */
-	public static void setClassName(String className) {
-		Sample.className = className;
-	}
 
 	/**
 	 * 构造函数,使类不可实例化.
@@ -60,14 +41,10 @@ public class Sample {
 		}
 		Instances YesInstances = new Instances("DefectSample1", attInfo,
 				init.numInstances());// 这里的初始容量需要注意，不要小了。
-		YesInstances.setClass(YesInstances.attribute(className));
-
-		// YesInstances.setClassIndex(init.numAttributes() - 1);
-		// 未能统一的将类标签作为最后一个属性，可能导致计算上的复杂，有待改进。
+		YesInstances.setClassIndex(init.classIndex());
 		Instances Noinstances = new Instances("DefectSample2", attInfo,
 				init.numInstances());
-		Noinstances.setClass(Noinstances.attribute(className));
-		init.setClass(init.attribute(className));
+		Noinstances.setClassIndex(Noinstances.classIndex());
 		int classIndex = init.classIndex();
 		int numInstance = init.numInstances();
 		int numYes = 0;
@@ -75,7 +52,7 @@ public class Sample {
 		for (int i = 0; i < numInstance; i++) {
 			Instance temp = init.instance(i);
 			double Value = temp.value(classIndex);
-			if (Value == 1) { // weka的内部值并不与属性的值相对应，参考weka api。
+			if (Math.abs(Value-1)<0.001) { // weka的内部值并不与属性的值相对应，参考weka api。
 				YesInstances.add(temp);
 				numYes++;
 			} else // clear change
@@ -142,10 +119,10 @@ public class Sample {
 		}
 
 		Instances NoInstances = new Instances("No", attInfo, numInstance);
-		NoInstances.setClass(NoInstances.attribute(className));
+		NoInstances.setClassIndex(init.classIndex());
 		Instances YesInstances = new Instances("yes", attInfo, numInstance);
-		YesInstances.setClass(YesInstances.attribute(className));
-		init.setClass(init.attribute(className));
+		YesInstances.setClassIndex(init.classIndex());
+
 		int classIndex = init.classIndex();
 
 		int numYes = 0;
@@ -154,7 +131,7 @@ public class Sample {
 		for (int i = 0; i < numInstance; i++) {
 			Instance temp = init.instance(i);
 			double Value = temp.value(classIndex);
-			if (Value == 0) { // yes
+			if (Math.abs(Value-0)<0.001) { // yes
 				NoInstances.add(temp);
 				numNo++;
 			} else {
@@ -182,7 +159,6 @@ public class Sample {
 	 */
 	public static Instances smote(Instances ins) throws Exception {
 		SMOTE smote = new SMOTE();
-		ins.setClass(ins.attribute(className));
 		smote.setInputFormat(ins);
 		Instances smoteInstances = Filter.useFilter(ins, smote);
 		return smoteInstances;
@@ -209,7 +185,7 @@ public class Sample {
 		for (int i = 0; i < totalNum; i++) {
 			res.add(init.instance(rn.nextInt(numInstance)));
 		}
-		res.setClass(res.attribute(className));
+		res.setClassIndex(res.classIndex());
 		return res;
 	}
 

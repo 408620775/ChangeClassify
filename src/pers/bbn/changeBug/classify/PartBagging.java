@@ -1,6 +1,13 @@
 package pers.bbn.changeBug.classify;
 
+import java.util.Enumeration;
+
 import weka.classifiers.Classifier;
+import weka.classifiers.RandomizableIteratedSingleClassifierEnhancer;
+import weka.core.AdditionalMeasureProducer;
+import weka.core.TechnicalInformation;
+import weka.core.TechnicalInformationHandler;
+import weka.core.WeightedInstancesHandler;
 
 /**
  * 根据不同部分的属性分别构建不同的分类器,最后将所有分类器集成,按照投票结果决定实例最终的标签.
@@ -9,20 +16,11 @@ import weka.classifiers.Classifier;
  * @author niu
  *
  */
-public class PartBagging {
-	/**
-	 * 
-	 */
+public class PartBagging extends RandomizableIteratedSingleClassifierEnhancer
+		implements  AdditionalMeasureProducer,
+		TechnicalInformationHandler {
 
-	private Classifier baseClassifier;
-
-	public Classifier getBaseClassifier() {
-		return baseClassifier;
-	}
-
-	public void setBaseClassifier(Classifier baseClassifier) {
-		this.baseClassifier = baseClassifier;
-	}
+	private static final long serialVersionUID = 1L;
 
 	/**
 	 * 构造函数,初始化变量
@@ -42,5 +40,25 @@ public class PartBagging {
 	public void buildClassifier() throws Exception {
 
 	}
+
+	@Override
+	public TechnicalInformation getTechnicalInformation() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Enumeration enumerateMeasures() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public double getMeasure(String measureName) {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
+
 
 }

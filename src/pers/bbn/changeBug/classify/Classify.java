@@ -148,17 +148,18 @@ public class Classify {
 	 */
 	void Evaluation100(int choose) throws Exception {
 		List<List<Double>> TenRes = new ArrayList<>();
-		for (int i = 0; i < 10; i++) {
+		int flods=1;
+		for (int i = 0; i < flods; i++) {
 			List<Double> tempResult=Evaluation10(choose, i);
 			TenRes.add(tempResult);
 		}
 		res=new ArrayList<>();
 		for (int i = 0; i < TenRes.get(0).size(); i++) {
 			double temp = 0.0;
-			for (int j = 0; j < 10; j++) {
+			for (int j = 0; j < flods; j++) {
 				temp = temp + TenRes.get(j).get(i);
 			}
-			res.add(temp / 10);
+			res.add(temp / flods);
 		}
 
 	}
@@ -181,7 +182,7 @@ public class Classify {
 		LocRes.add(eval.fMeasure(0));
 		LocRes.add(eval.fMeasure(1));
 		LocRes.add(eval.areaUnderROC(1));
-		LocRes.add(Math.sqrt(res.get(0) * res.get(1)));
+		LocRes.add(Math.sqrt(LocRes.get(0) * LocRes.get(1)));//???
 		LocRes.add(1 - eval.errorRate());
 		res = LocRes;
 		return LocRes;

@@ -8,15 +8,20 @@ import java.util.List;
 import java.util.Map;
 import weka.core.Instances;
 import weka.core.converters.ArffLoader;
+
 /**
  * 客户端类,在此处执行单个或多个arff文件的分类任务.
+ * 
  * @author niu
  *
  */
 public class Main {
 	static DecimalFormat df = new DecimalFormat("0.00");
+
 	public static void main(String[] args) throws Exception {
-		excuteClassifyCalfulateForSingleFile("MyVoldemortFB.arff", "MyVoldemortFB.csv");
+		excuteClassifyCalfulateForSingleFile(
+				"/home/niu/ExpData/jit/inputArff/bugzilla.arff",
+				"/home/niu/ExpData/jit/inputArff/bugzillaR.csv");
 	}
 
 	/**
@@ -37,8 +42,7 @@ public class Main {
 		ArffLoader arffLoader = new ArffLoader();
 		arffLoader.setFile(arffFile);
 		Instances instances = arffLoader.getDataSet();
-		ClassifyCalculate classifyCalculate = new ClassifyCalculate(instances,
-				"bug_introducing");
+		ClassifyCalculate classifyCalculate = new ClassifyCalculate(instances);
 		classifyCalculate.totalCal();
 		Map<List<String>, List<Double>> resMap = classifyCalculate.getRes();
 
@@ -61,13 +65,17 @@ public class Main {
 	}
 
 	/**
-	 *对文件夹folderO下所有的arff文件使用classifyCalculate执行分类计算,并将结果保存到指定文件夹folderS中.
-	 * @param folderO 包含待执行所有arff文件的文件夹.
-	 * @param folderS 保存所有arff文件分类结果的文件夹.
+	 * 对文件夹folderO下所有的arff文件使用classifyCalculate执行分类计算,并将结果保存到指定文件夹folderS中.
+	 * 
+	 * @param folderO
+	 *            包含待执行所有arff文件的文件夹.
+	 * @param folderS
+	 *            保存所有arff文件分类结果的文件夹.
 	 * @author niu
 	 * @throws Exception
 	 */
-	static void excuteClassifyCalfulateForMulFile(String folderO,String folderS) throws Exception {
+	static void excuteClassifyCalfulateForMulFile(String folderO, String folderS)
+			throws Exception {
 		File file = new File(folderO);
 		File save = new File(folderS);
 		if (!save.exists()) {
@@ -75,8 +83,9 @@ public class Main {
 		}
 		String[] arffFiles = file.list();
 		for (String string : arffFiles) {
-			String saveFile=folderS+"/"+string.replace(".arff", ".csv");
-			excuteClassifyCalfulateForSingleFile(folderO+"/"+string, saveFile);
+			String saveFile = folderS + "/" + string.replace(".arff", ".csv");
+			excuteClassifyCalfulateForSingleFile(folderO + "/" + string,
+					saveFile);
 		}
 	}
 }
