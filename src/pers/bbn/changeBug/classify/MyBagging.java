@@ -41,9 +41,8 @@ public class MyBagging extends RandomizableIteratedSingleClassifierEnhancer
 	int choose;
 	String className;
 
-	public MyBagging(String cla, int choose) {
+	public MyBagging(int choose) {
 		this.choose = choose;
-		this.className = cla;
 		m_Classifier = new weka.classifiers.trees.REPTree();
 	}
 

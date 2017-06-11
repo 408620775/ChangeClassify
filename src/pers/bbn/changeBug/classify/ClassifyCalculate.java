@@ -1,14 +1,10 @@
 package pers.bbn.changeBug.classify;
 
-import java.text.DecimalFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
-
-import javax.tools.Tool;
 
 import pers.bbn.changeBug.extraction.MyTool;
 import weka.classifiers.Classifier;
@@ -25,15 +21,17 @@ import weka.core.Instances;
  *
  */
 public class ClassifyCalculate {
-	private String[] classifys = { "weka.classifiers.trees.J48",
-			"weka.classifiers.bayes.NaiveBayes",
-			"weka.classifiers.functions.SMO" };
+	private String[] classifys = { //"weka.classifiers.trees.J48",
+			//"weka.classifiers.bayes.NaiveBayes",
+			//"weka.classifiers.functions.SMO"
+			"weka.classifiers.functions.Logistic"};
+	
 	// "weka.classifiers.meta.AdaBoostM1" };
 	private String[] methods = { "standard", "undersample", "oversample",
 			"bagging", "underBagging", "overBagging" };
 	private Instances ins;
 	private Map<List<String>, List<Double>> res;
-	private String className = "bug_introducing";
+	//private String className = "bug_introducing";
 
 	/**
 	 * 获取各种分类模型+采样模型下的结果.
@@ -42,37 +40,6 @@ public class ClassifyCalculate {
 	 */
 	public Map<List<String>, List<Double>> getRes() {
 		return res;
-	}
-
-	/**
-	 * 查看分类时的类标签.
-	 * 
-	 * @return 分类时指定的类标签.
-	 */
-	public String getClassName() {
-		return className;
-	}
-
-	/**
-	 * 设置分类时的类标签,默认为"bug_introducing".
-	 * 
-	 * @param className
-	 */
-	public void setClassName(String className) {
-		this.className = className;
-	}
-
-	/**
-	 * 构造函数，初始化要使用的用例集。
-	 * 
-	 * @param instances
-	 *            将要用于分类的用力集，可能是不均衡的数据。
-	 */
-	public ClassifyCalculate(Instances instances, String claName) {
-		this.ins = instances;
-		this.className = claName;
-		this.ins.setClass(ins.attribute(className));
-		res = new LinkedHashMap<>();
 	}
 
 	/**
@@ -94,14 +61,14 @@ public class ClassifyCalculate {
 	 */
 	public void totalCal() throws Exception {
 		Classify classify = null;
-		for (int i = 0; i < 1; i++) {
+		for (int i = 0; i < classifys.length; i++) {
 			for (int j = 0; j < 3; j++) {
 				List<String> keyList = new ArrayList<>();
 				keyList.add(classifys[i]);
 				keyList.add(methods[j]);
 				classify = new Classify((Classifier) Class
 						.forName(classifys[i]).newInstance(), ins);
-				// classify.Evaluation100(j);
+				//classify.Evaluation100(j);
 				classify.Evaluation10(j, new Random().nextInt(10));
 				res.put(keyList, classify.getRes());
 			}
@@ -110,12 +77,12 @@ public class ClassifyCalculate {
 				List<String> keyList = new ArrayList<>();
 				keyList.add(classifys[i]);
 				keyList.add(methods[j]);
-				MyBagging bagging = new MyBagging(className, j - 3);
+				MyBagging bagging = new MyBagging(j - 3);
 				// Bagging bagging=new Bagging();
 				bagging.setClassifier((Classifier) Class.forName(classifys[i])
 						.newInstance());
 				classify = new Classify(bagging, ins);
-				// classify.Evaluation100(j-3);
+				//classify.Evaluation100(j-3);
 				classify.Evaluation10(j - 3, new Random().nextInt(10));
 				res.put(keyList, classify.getRes());
 			}

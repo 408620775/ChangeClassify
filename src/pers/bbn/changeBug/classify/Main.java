@@ -1,7 +1,6 @@
 package pers.bbn.changeBug.classify;
 
 import java.io.File;
-import java.text.DecimalFormat;
 import java.util.List;
 import java.util.Map;
 
@@ -20,8 +19,8 @@ public class Main {
 
 	public static void main(String[] args) throws Exception {
 		excuteClassifyCalfulateForSingleFile(
-				"/home/niu/ExpData/jit/inputArff/bugzilla.arff",
-				"/home/niu/ExpData/jit/inputArff/bugzillaR.csv");
+				"/home/niu/ExpData/mozilla.arff",
+				"/home/niu/ExpData/mozilla.csv");
 	}
 
 	/**
