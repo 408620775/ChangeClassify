@@ -1,0 +1,12 @@
+cfrc.txt
+log
+versionFiles
+bin
+src/pers/bbn/changeBug/resources/tmp.txt
+将删除 JITArff/
+将删除 LOCFiles/
+将删除 MyAnt.csv
+将删除 changeClassify.iml
+将删除 changeClassifyCSV/
+将删除 metricsFiles/
+将删除 src/pers/bbn/changeBug/resources/MyLuceneLOC
