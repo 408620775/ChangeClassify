@@ -1,5 +1,8 @@
 package pers.bbn.changeBug.extraction;
 
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -13,13 +16,6 @@ import java.util.Map;
  * 将commit按照时间排序，提取指定范围内所有commit的若干信息。若干信息的提取分别
  * 由三个子类去实现。需要注意的是，由于miningit分配给各commit的id并不是其实际提交的
  * 顺序（由于多线程并发导致），所以对于commit的排序不应根据其id排序，而应根据 commit_date排序。
- * 
- * @param sql
- *            需要连接的数据库
- * @param start
- *            指定的commit的起始值（按照时间排序）
- * @param end
- *            指定的commit的结束值（按照时间排序）
  * @see ResultSet
  * @see SQLException
  * @see Statement
@@ -90,6 +86,18 @@ public abstract class Extraction {
 				}
 			}
 		}
+		
+		File logFile=new File("log");
+		if (!logFile.exists()) {
+			logFile.createNewFile();
+		}
+		BufferedWriter bWriter=new BufferedWriter(new FileWriter(logFile));
+        System.out.println("The number of instance is :"+commit_fileIds.size());
+        for (List<Integer> list : commit_fileIds) {
+			bWriter.append(list.get(0)+" "+list.get(1)+"\n");
+		}
+		bWriter.flush();
+		bWriter.close();
 	}
 
 	/**
@@ -103,8 +111,7 @@ public abstract class Extraction {
 
 	/**
 	 * 根据给定的一组commit_fileId对,获取其对应的内容. 需要注意的是stringBuffer格式的content后面以逗号结尾
-	 * 
-	 * @param commit_fileIds
+	 *
 	 * @return
 	 * @throws SQLException
 	 */

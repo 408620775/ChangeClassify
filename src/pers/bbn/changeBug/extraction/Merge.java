@@ -39,6 +39,7 @@ public final class Merge {
 		if (list.size()==0) {
 			throw new Exception("the list size can't be 0!");
 		}
+		System.out.println("Merge");
 		Map<List<Integer>, StringBuffer> resMap=new LinkedHashMap<>();
 		for (List<Integer> key: list.get(0).keySet()) {
 			resMap.put(key, new StringBuffer());
@@ -46,9 +47,10 @@ public final class Merge {
 		for (List<Integer> keyList: resMap.keySet()) {
 			for (Map<List<Integer>, StringBuffer> part : list) {
 				resMap.get(keyList).append(part.get(keyList));
-				resMap.get(keyList).append(",");
 			}
-			resMap.get(keyList).deleteCharAt(resMap.get(keyList).length()-1);
+			if (resMap.get(keyList).charAt(resMap.get(keyList).length()-1)==',') {
+				resMap.get(keyList).deleteCharAt(resMap.get(keyList).length()-1);
+			}
 		}
 		return resMap;
 	}

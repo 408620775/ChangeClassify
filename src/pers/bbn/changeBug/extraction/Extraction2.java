@@ -83,6 +83,7 @@ public final class Extraction2 extends Extraction {
 		}
 		int total = 0;
 		int numBug = 0;
+		System.out.println("the size of commit_fileIds is "+commit_fileIds.size());
 		for (List<Integer> commit_fileId : commit_fileIds) {
 			sql = "select extraction1.commit_id,extraction1.file_id,rev,current_file_path,bug_introducing from extraction1,"
 					+ "scmlog,actions where extraction1.commit_id="
@@ -406,4 +407,8 @@ public final class Extraction2 extends Extraction {
 		return content;
 	}
 
+	public static void main(String[] args) throws Exception {
+		Extraction2 extraction2=new Extraction2("MyFlink",1001, 1300);
+		extraction2.recoverPreFile("flinkFiles");
+	}
 }
