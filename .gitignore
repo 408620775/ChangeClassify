@@ -10,3 +10,9 @@ LOCFiles/
 changeClassify.iml
 changeClassifyCSV/
 src/pers/bbn/changeBug/resources/MyLuceneLOC
+*.xml
+Arffs/
+Arffs_BestFirst/
+Arffs_Line/
+out/
+csv/

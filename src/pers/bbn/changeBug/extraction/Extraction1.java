@@ -1214,7 +1214,7 @@ public final class Extraction1 extends Extraction {
         String metric = metricsFilesPath + "/" + database + "Metrics.txt";
         extraction2.extraFromTxt(metric);
         Extraction3 extraction3 = new Extraction3(database, versionFilesPath + "/" + project + "Files",
-                start_commit_id, end_commit_id);
+                start_commit_id, end_commit_id,true);
 
         List<List<Integer>> commit_fileIds = extraction1.commit_fileIds;
         List<Map<List<Integer>, StringBuffer>> list = new ArrayList<>();
@@ -1272,7 +1272,7 @@ public final class Extraction1 extends Extraction {
         //Extraction1 extraction1 = new Extraction1(database,5501,5800);
         //extraction1.getJustInTimeArff(database+"JIT.csv");
         //Automatic1("hadoop", 5501, 5800, "/home/niu/test/hadoop");
-        for (int i = 2; i < projects.length; i++) {
+        for (int i = 1; i <= 3; i++) {
             Automatic2(projects[i],projectRange[i][0],projectRange[i][1]);
         }
         //Automatic2("lucene", 1001, 1500);
