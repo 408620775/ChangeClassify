@@ -1,5 +1,3 @@
-package pers.bbn.changeBug.tests;
-
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;

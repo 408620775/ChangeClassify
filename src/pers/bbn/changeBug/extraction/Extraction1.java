@@ -41,10 +41,11 @@ public final class Extraction1 extends Extraction {
     private List<List<Integer>> commit_file_inExtracion1;
     public static String versionFilesPath = "versionFiles";
     public static String metricsFilesPath = "metricsFiles";
-    public static String[] projects = {"ant", "buck", "flink", "hadoop", "itextpdf", "jEdit", "lucene",
-            "synapse", "tomcat", "voldemort"};
-    public static int[][] projectRange={{1001,1500},{1001,1300},{1001,1300},{5501,5800},{501,800},{1001,1500},{1001,
-            1500},{1001,1300},{1001,1500},{501,800}};
+    public static String[] projects = {"MyAnt", "MyBuck", "MyFlink", "MyHadoop", "MyItextpdf", "MyJedit", "MyLucene",
+            "MySynapse", "MyTomcat", "MyVoldemort"};
+    public static int[][] projectRange = {{1001, 1500}, {1001, 1300}, {1001, 1300}, {5501, 5800}, {501, 800}, {1001, 1500}, {1001,
+            1500}, {1001, 1300}, {1001, 1500}, {501, 800}};
+
     /**
      * 提取第一部分change info，s为指定开始的commit_id，e为结束的commit_id
      *
@@ -102,6 +103,23 @@ public final class Extraction1 extends Extraction {
         if (result != -1) {
             System.out.println("创建表extraction1成功");
         }
+    }
+
+    public StringBuffer getLOCFile() throws SQLException {
+        StringBuffer sBuffer = new StringBuffer();
+        for (List<Integer> commit_fileId : commit_fileIds) {
+            sql = "select la,ld from extraction1 where commit_id=" + commit_fileId.get(0) + " and file_id=" + commit_fileId.get(1);
+            resultSet = stmt.executeQuery(sql);
+            while (resultSet.next()) {
+                int la = resultSet.getInt(1);
+                int ld = resultSet.getInt(2);
+                sBuffer.append(commit_fileId.get(0) + "," + commit_fileId.get(1) + "," + la + "," + ld + "," + (la + ld) + "\n");
+            }
+        }
+        if (sBuffer.toString().endsWith("\n")) {
+            sBuffer.deleteCharAt(sBuffer.lastIndexOf("\n"));
+        }
+        return sBuffer;
     }
 
     /**
@@ -1214,7 +1232,7 @@ public final class Extraction1 extends Extraction {
         String metric = metricsFilesPath + "/" + database + "Metrics.txt";
         extraction2.extraFromTxt(metric);
         Extraction3 extraction3 = new Extraction3(database, versionFilesPath + "/" + project + "Files",
-                start_commit_id, end_commit_id,true);
+                start_commit_id, end_commit_id, true);
 
         List<List<Integer>> commit_fileIds = extraction1.commit_fileIds;
         List<Map<List<Integer>, StringBuffer>> list = new ArrayList<>();
@@ -1230,9 +1248,9 @@ public final class Extraction1 extends Extraction {
         list.add(map1);
         list.add(map2);
         list.add(map3);
-        extraction1=null;
-        extraction2=null;
-        extraction3=null;
+        extraction1 = null;
+        extraction2 = null;
+        extraction3 = null;
         FileOperation.writeContentMap(Merge.mergeMap(list), database + ".csv");
 
     }
@@ -1253,28 +1271,32 @@ public final class Extraction1 extends Extraction {
         StringBuffer sBuffer = new StringBuffer();
         sBuffer.append("ns,nd,nf,entropy,la,ld,lt,fix,NEDV,AGE,NUC,EXP,REXP,SEXP,bug_introducing\n");
         for (List<Integer> commit_fileId : commit_fileIds) {
-            sql="select ns,nd,nf,entropy,la,ld,lt,fix,NEDV,AGE,NUC,EXP,REXP,SEXP,bug_introducing from extraction1 " +
+            sql = "select ns,nd,nf,entropy,la,ld,lt,fix,NEDV,AGE,NUC,EXP,REXP,SEXP,bug_introducing from extraction1 " +
                     "where " +
-                    "commit_id="+commit_fileId.get(0)+" and file_id="+commit_fileId.get(1);
-            resultSet=stmt.executeQuery(sql);
-            while (resultSet.next()){
+                    "commit_id=" + commit_fileId.get(0) + " and file_id=" + commit_fileId.get(1);
+            resultSet = stmt.executeQuery(sql);
+            while (resultSet.next()) {
                 sBuffer.append(resultSet.getString(1));
                 for (int i = 2; i <= 15; i++) {
-                    sBuffer.append(","+resultSet.getString(i));
+                    sBuffer.append("," + resultSet.getString(i));
                 }
                 sBuffer.append("\n");
             }
         }
-        FileOperation.writeStringBuffer(sBuffer,outFileName);
+        FileOperation.writeStringBuffer(sBuffer, outFileName);
     }
+
     public static void main(String[] args) throws Exception {
-        //String database = "MyHadoop";
-        //Extraction1 extraction1 = new Extraction1(database,5501,5800);
+        for (int i = 0; i < projects.length; i++) {
+            System.out.println(projects[i]);
+            Extraction1 extraction1 = new Extraction1(projects[i], projectRange[i][0], projectRange[i][1]);
+        }
+
         //extraction1.getJustInTimeArff(database+"JIT.csv");
         //Automatic1("hadoop", 5501, 5800, "/home/niu/test/hadoop");
-        for (int i = 1; i <= 3; i++) {
-            Automatic2(projects[i],projectRange[i][0],projectRange[i][1]);
-        }
+//        for (int i = 1; i <= 3; i++) {
+//            Automatic2(projects[i],projectRange[i][0],projectRange[i][1]);
+//        }
         //Automatic2("lucene", 1001, 1500);
         //Extraction1 extraction1=new Extraction1("MyJedit", 1101, 1500);
         // extraction1.canPart();

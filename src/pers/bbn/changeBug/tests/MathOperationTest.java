@@ -1,4 +1,4 @@
-package pers.bbn.changeBug.tests;
+
 
 import static org.junit.Assert.*;
 import java.util.Arrays;

@@ -1,5 +1,3 @@
-package pers.bbn.changeBug.tests;
-
 import java.util.List;
 import java.util.Map;
 

@@ -1,5 +1,3 @@
-package pers.bbn.changeBug.tests;
-
 import java.util.List;
 import java.util.Map;
 
@@ -21,7 +19,7 @@ public class Extraction3Test {
 	@Test
 	public final void testGetContentMap() throws Exception {
 		Extraction3 extraction3 = new Extraction3("MyVoldemort",
-				"/home/niu/test/voldemortR/voldemortFiles", 501, 550);
+				"/home/niu/test/voldemortR/voldemortFiles", 501, 550,false);
 		Map<List<Integer>, StringBuffer> contentMap = extraction3
 				.getContentMap(commit_fileIds);
 		for (List<Integer> list : commit_fileIds) {

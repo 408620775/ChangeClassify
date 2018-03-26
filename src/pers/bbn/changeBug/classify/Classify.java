@@ -1,11 +1,13 @@
 package pers.bbn.changeBug.classify;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Random;
 import weka.classifiers.Classifier;
 import weka.classifiers.Evaluation;
 import weka.core.Instances;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
+
 
 /**
  * 分类器类,用于执行分类任务,并输出分类结果.

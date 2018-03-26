@@ -1,4 +1,3 @@
-package pers.bbn.changeBug.tests;
 
 import static org.junit.Assert.*;
 

@@ -24,12 +24,6 @@ import jxl.read.biff.BiffException;
  * 提取源码的图属性.
  * 
  * @author nbb
- * @param attrsTitle
- *            所有图属性组成的StingBuffer.
- * @param uselessAttriId
- *            不用的属性的id.
- * @param projectName
- *            工程名称.
  *
  */
 public class Extraction4 extends Extraction {

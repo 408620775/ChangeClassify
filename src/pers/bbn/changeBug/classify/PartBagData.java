@@ -44,7 +44,7 @@ public class PartBagData {
 				.getContentMap(commitFileIds);
 
 		Extraction3 extraction3 = new Extraction3(database, projectHome, start,
-				end);
+				end,false);
 		Map<List<Integer>, StringBuffer> bowContent = extraction3
 				.getContentMap(commitFileIds);
 		List<Map<List<Integer>, StringBuffer>> contentsMap = Arrays.asList(
